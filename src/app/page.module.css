@@ -1,0 +1,25 @@
+.mainContainer {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  justify-content: center;
+  /* align-items: center; */
+}
+
+.title {
+  font-size: 3rem;
+  align-content: center;
+  text-align: center;
+  padding: 1rem 0;
+
+}
+
+.gameContainer {
+  display: grid;
+}
+
+.cell {
+  width: var(--cell-size);
+  height: var(--cell-size);
+  background-color: white;
+  border: 1px solid #CCC;
+}

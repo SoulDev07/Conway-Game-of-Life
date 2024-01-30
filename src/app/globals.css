@@ -1,4 +1,6 @@
 :root {
+  --cell-size: 2.5rem;
+
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
