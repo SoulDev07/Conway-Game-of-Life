@@ -1,24 +1,31 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
-import Cell from "./components/cell"
+import Cell from "./components/cell";
 import styles from './page.module.css';
 
-// Constants for the size of the board
+// Constants for the board
 const numRows = 15;
 const numCols = 30;
+const PATTERNS = [
+  [[1, 0], [1, 1], [1, 2]],          // Blinker
+  [[0, 1], [1, 1], [2, 1]],          // Glider
+  [[0, 0], [0, 1], [1, 0], [1, 1]],  // Block
+  [[0, 0], [0, 1], [0, 2], [1, 2], [2, 2]],  // L-Shape
+  [[0, 0], [1, 0], [2, 0], [2, 1], [2, 2]],  // T-Shape
+  [[0, 0], [0, 1], [0, 2], [0, 3], [0, 4]],  // Line
+  [[0, 0], [0, 1], [1, 1], [2, 1], [2, 0]],  // Glider Gun
+];
+
+const getIndex = (row, col) => (row + numRows) % numRows * numCols + (col + numCols) % numCols;
 
 // Function to generate an empty board
-const generateEmptyBoard = () => {
-  let board = [];
-  for (let i = 0; i < numRows; i++)
-    board.push(Array(numCols).fill(false));
-  return board;
-}
+const generateEmptyBoard = () => Array(numRows * numCols).fill(false);
 
 // Function to update the state of a cell based on its neighbors
 const updateCell = (prevBoard, rowIndex, colIndex) => {
+  const index = getIndex(rowIndex, colIndex);
   const neighbours = countNeighbors(prevBoard, rowIndex, colIndex);
-  return prevBoard[rowIndex][colIndex] ? (neighbours === 2 || neighbours === 3) : neighbours === 3;
+  return prevBoard[index] ? (neighbours === 2 || neighbours === 3) : neighbours === 3;
 };
 
 // Function to count the number of live neighbors for a given cell
@@ -31,20 +38,53 @@ const countNeighbors = (prevBoard, i, j) => {
     const newCol = j + offsetJ;
 
     // Check if the adjacent cell is within the board boundaries and is alive
-    if (newRow >= 0 && newRow < numRows && newCol >= 0 && newCol < numCols && prevBoard[newRow][newCol])
+    if (prevBoard[getIndex((newRow + numRows) % numRows, (newCol + numCols) % numCols)])
       count++;
   });
 
   return count;
 };
 
+const getRandomPattern = () => PATTERNS[Math.floor(Math.random() * PATTERNS.length)];
+
+const getPatternSize = (pattern) => {
+  let maxRow = 0;
+  let maxCol = 0;
+
+  pattern.forEach(([offsetI, offsetJ]) => {
+    maxRow = Math.max(maxRow, offsetI);
+    maxCol = Math.max(maxCol, offsetJ);
+  });
+
+  return { rows: maxRow + 1, cols: maxCol + 1 };
+};
+
+const calculateStartingPosition = (pattern, edge) => {
+  const { rows, cols } = getPatternSize(pattern);
+
+  switch (edge) {
+    case 0: // Top edge
+      return [0, Math.floor(Math.random() * (numCols - cols + 1))];
+
+    case 1: // Bottom edge
+      return [numRows - rows, Math.floor(Math.random() * (numCols - cols + 1))];
+
+    case 2: // Left edge
+      return [Math.floor(Math.random() * (numRows - rows + 1)), 0];
+
+    case 3: // Right edge
+      return [Math.floor(Math.random() * (numRows - rows + 1)), numCols - cols];
+
+    default:
+      return [0, 0];
+  }
+};
+
 const Board = ({ board, onCellClick }) => (
   <div className={styles.gameContainer} style={{ gridTemplateColumns: `repeat(${numCols}, var(--cell-size))` }}>
-    {board.map((row, i) =>
-      row.map((cell, j) => (
-        <Cell key={`${i}-${j}`} isAlive={cell} onClick={() => onCellClick(i, j)} />
-      ))
-    )}
+    {board.map((cell, index) => (
+      <Cell key={index} isAlive={cell} onClick={() => onCellClick(Math.floor(index / numCols), index % numCols)} />
+    ))}
   </div>
 );
 
@@ -56,16 +96,15 @@ export default function Home() {
   const toggleCell = useCallback((row, col) => {
     setBoard((prevBoard) => {
       const newBoard = [...prevBoard];
-      newBoard[row][col] = !newBoard[row][col];
+      const index = getIndex(row, col);
+      newBoard[index] = !newBoard[index];
       return newBoard;
     });
   }, [setBoard]);
 
   const updateBoard = useCallback(() => {
     setBoard((prevBoard) =>
-      prevBoard.map((row, i) =>
-        row.map((cell, j) => updateCell(prevBoard, i, j))
-      )
+      prevBoard.map((cell, index) => updateCell(prevBoard, Math.floor(index / numCols), index % numCols))
     );
   }, [setBoard]);
 
@@ -77,54 +116,13 @@ export default function Home() {
   const addRandomCells = () => {
     setBoard((prevBoard) => {
       const newBoard = [...prevBoard];
-      const patterns = [
-        [[1, 0], [1, 1], [1, 2]], // Blinker
-        [[0, 1], [1, 1], [2, 1]], // Glider
-        [[0, 0], [0, 1], [1, 0], [1, 1]], // Block
-      ];
-
-      const getPatternSize = (pattern) => {
-        let maxRow = 0;
-        let maxCol = 0;
-
-        pattern.forEach(([offsetI, offsetJ]) => {
-          maxRow = Math.max(maxRow, offsetI);
-          maxCol = Math.max(maxCol, offsetJ);
-        });
-
-        return { rows: maxRow + 1, cols: maxCol + 1 };
-      };
-
-      const randomPattern = patterns[Math.floor(Math.random() * patterns.length)];
+      const pattern = getRandomPattern();
       const randomEdge = Math.floor(Math.random() * 4);
 
-      // Calculate the valid starting position on the chosen edge to place the pattern
-      let startRow, startCol;
+      const [startRow, startCol] = calculateStartingPosition(pattern, randomEdge);
 
-      switch (randomEdge) {
-        case 0: // Top edge
-          startRow = getPatternSize(randomPattern).rows;
-          startCol = Math.floor(Math.random() * (numCols - randomPattern[0].length + 1));
-          break;
-        case 1: // Bottom edge
-          startRow = numRows - getPatternSize(randomPattern).rows;
-          startCol = Math.floor(Math.random() * (numCols - randomPattern[0].length + 1));
-          break;
-        case 2: // Left edge
-          startRow = Math.floor(Math.random() * (numRows - randomPattern.length + 1));
-          startCol = getPatternSize(randomPattern).cols;
-          break;
-        case 3: // Right edge
-          startRow = Math.floor(Math.random() * (numRows - randomPattern.length + 1));
-          startCol = numCols - getPatternSize(randomPattern).cols;
-          break;
-        default:
-          break;
-      }
-
-      // Place the pattern on the board
-      randomPattern.forEach(([offsetI, offsetJ]) => {
-        newBoard[startRow + offsetI][startCol + offsetJ] = true;
+      pattern.forEach(([offsetI, offsetJ]) => {
+        newBoard[getIndex(startRow + offsetI, startCol + offsetJ)] = true;
       });
 
       return newBoard;
@@ -145,7 +143,6 @@ export default function Home() {
     return () => clearInterval(idleInterval);
   }, [idleRunning]);
 
-
   return (
     <main className={styles.mainContainer}>
       <h1 className={styles.title}> Conway’s Game of Life </h1>
@@ -155,7 +152,7 @@ export default function Home() {
           {running ? 'Stop' : 'Start'}
         </button>
         <button className={styles.btn} onClick={resetBoard}> Reset </button>
-        <button className={styles.btn} onClick={() => setIdleRunning(!idleRunning)}>
+        <button className={styles.btn} onClick={() => { setIdleRunning(!idleRunning); setRunning(true) }}>
           {idleRunning ? 'Stop Idle' : 'Start Idle'}
         </button>
       </div>
