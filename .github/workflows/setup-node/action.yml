@@ -8,4 +8,7 @@ runs:
       with:
         node-version: 20
         cache: 'yarn'
+
+    - name: Install dependencies 
+      shell: bash
       run: yarn install --frozen-lockfile
