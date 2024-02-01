@@ -1,5 +1,6 @@
 .cell {
   width: var(--cell-size);
   height: var(--cell-size);
-  border: 1px solid #CCC;
+  border: 1px solid var(--cell-bg-color);
+  border-radius: .3rem;
 }
