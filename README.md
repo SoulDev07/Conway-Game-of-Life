@@ -5,7 +5,9 @@ This project is an implementation of the famous cellular automaton devised by ma
 - Experience the classic Conway Game of Life on your web browser.
 - Watch as cells evolve based on simple rules and create mesmerizing patterns.
 
-<video src="assets/Conway-Game-of-Life-Demo.mp4" controls="controls" autoplay muted></video>
+
+![Conway Game of Life Website Video](assets/Conway-Game-of-Life-Demo.gif)
+
 [Conway Game of Life Demo](https://SoulDev07.github.io/Conway-Game-of-Life)
 
 ## Features
