@@ -1,6 +1,11 @@
 .cell {
   width: var(--cell-size);
   height: var(--cell-size);
+  transition: box-shadow 0.25s ease-in-out;
   border: 1px solid var(--cell-bg-color);
   border-radius: .3rem;
+}
+
+.glow {
+  box-shadow: 0 0 30px var(--cell-color);
 }

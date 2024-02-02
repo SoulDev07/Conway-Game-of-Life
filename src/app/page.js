@@ -80,10 +80,10 @@ const calculateStartingPosition = (pattern, edge) => {
   }
 };
 
-const Board = ({ board, onCellClick }) => (
+const Board = ({ board, glowMode, onCellClick }) => (
   <div className={styles.gameContainer} style={{ gridTemplateColumns: `repeat(${numCols}, var(--cell-size))` }}>
     {board.map((cell, index) => (
-      <Cell key={index} isAlive={cell} onClick={() => onCellClick(Math.floor(index / numCols), index % numCols)} />
+      <Cell key={index} isAlive={cell} glowMode={glowMode} onClick={() => onCellClick(Math.floor(index / numCols), index % numCols)} />
     ))}
   </div>
 );
@@ -92,6 +92,7 @@ export default function Home() {
   const [board, setBoard] = useState(() => generateEmptyBoard());
   const [running, setRunning] = useState(false);
   const [idleRunning, setIdleRunning] = useState(false);
+  const [glowMode, setGlowMode] = useState(false);
 
   const toggleCell = useCallback((row, col) => {
     setBoard((prevBoard) => {
@@ -155,9 +156,12 @@ export default function Home() {
         <button className={styles.btn} onClick={() => { setIdleRunning(!idleRunning); setRunning(true) }}>
           {idleRunning ? 'Stop Idle' : 'Start Idle'}
         </button>
+        <button className={styles.btn} onClick={() => setGlowMode(!glowMode)}>
+          {glowMode ? 'Disable Glow' : 'Enable Glow'}
+        </button>
       </div>
 
-      <Board board={board} onCellClick={toggleCell} />
+      <Board board={board} glowMode={glowMode} onCellClick={toggleCell} />
     </main>
   );
 }

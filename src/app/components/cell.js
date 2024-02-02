@@ -1,8 +1,8 @@
 import React from "react";
 import styles from "./cell.module.css";
 
-const Cell = React.memo(({ isAlive, onClick }) => (
-  <div className={styles.cell} style={{ backgroundColor: isAlive && 'var(--cell-color)' }} onClick={onClick} />
+const Cell = React.memo(({ isAlive, glowMode, onClick }) => (
+  <div className={`${styles.cell} ${isAlive && glowMode ? styles.glow : ''}`} style={{ backgroundColor: isAlive && 'var(--cell-color)' }} onClick={onClick} />
 ));
 
 Cell.displayName = 'Cell';
