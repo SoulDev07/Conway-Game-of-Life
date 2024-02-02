@@ -1,16 +1,27 @@
 :root {
   --cell-size: 2.5rem;
   --bg-color: #292929;
-  --cell-color: #66FCF1;
   --cell-bg-color: #292929;
   --btn-bg-color: #242424;
-  --btn-border-color: #66FCF1;
-  --btn-hover-color: #45A29F;
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+.cyan-theme {
+  --cell-color: #66FCF1;
+  --btn-text-color: #66FCF1;
+  --btn-border-color: #66FCF1;
+  --btn-hover-color: #45A29F;
+}
+
+.green-theme {
+  --cell-color: #38D352;
+  --btn-text-color: #38D352;
+  --btn-border-color: #38D352;
+  --btn-hover-color: #4CAF50;
 }
 
 * {

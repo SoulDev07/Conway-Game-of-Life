@@ -15,6 +15,8 @@ const PATTERNS = [
   [[0, 0], [0, 1], [0, 2], [0, 3], [0, 4]],  // Line
   [[0, 0], [0, 1], [1, 1], [2, 1], [2, 0]],  // Glider Gun
 ];
+const NEIGHBOR_OFFSETS = [[-1, -1], [-1, 0], [-1, 1], [0, -1], [0, 1], [1, -1], [1, 0], [1, 1]];
+
 
 const getIndex = (row, col) => (row + numRows) % numRows * numCols + (col + numCols) % numCols;
 
@@ -25,15 +27,16 @@ const generateEmptyBoard = () => Array(numRows * numCols).fill(false);
 const updateCell = (prevBoard, rowIndex, colIndex) => {
   const index = getIndex(rowIndex, colIndex);
   const neighbours = countNeighbors(prevBoard, rowIndex, colIndex);
-  return prevBoard[index] ? (neighbours === 2 || neighbours === 3) : neighbours === 3;
+  const isAlive = prevBoard[index];
+
+  return isAlive ? (neighbours === 2 || neighbours === 3) : neighbours === 3;
 };
 
 // Function to count the number of live neighbors for a given cell
 const countNeighbors = (prevBoard, i, j) => {
   let count = 0;
-  const neighborsOffsets = [[-1, -1], [-1, 0], [-1, 1], [0, -1], [0, 1], [1, -1], [1, 0], [1, 1]];
 
-  neighborsOffsets.forEach(([offsetI, offsetJ]) => {
+  NEIGHBOR_OFFSETS.forEach(([offsetI, offsetJ]) => {
     const newRow = i + offsetI;
     const newCol = j + offsetJ;
 
@@ -93,6 +96,7 @@ export default function Home() {
   const [running, setRunning] = useState(false);
   const [idleRunning, setIdleRunning] = useState(false);
   const [glowMode, setGlowMode] = useState(false);
+  const [currentTheme, setCurrentTheme] = useState("cyan");
 
   const toggleCell = useCallback((row, col) => {
     setBoard((prevBoard) => {
@@ -102,6 +106,10 @@ export default function Home() {
       return newBoard;
     });
   }, [setBoard]);
+
+  const toggleTheme = useCallback(() => {
+    setCurrentTheme((prevTheme) => (prevTheme === "cyan" ? "green" : "cyan"));
+  }, [setCurrentTheme]);
 
   const updateBoard = useCallback(() => {
     setBoard((prevBoard) =>
@@ -145,7 +153,7 @@ export default function Home() {
   }, [idleRunning]);
 
   return (
-    <main className={styles.mainContainer}>
+    <main className={`${styles.mainContainer} ${currentTheme}-theme`}>
       <h1 className={styles.title}> Conway’s Game of Life </h1>
 
       <div className={styles.btnList}>
@@ -158,6 +166,9 @@ export default function Home() {
         </button>
         <button className={styles.btn} onClick={() => setGlowMode(!glowMode)}>
           {glowMode ? 'Disable Glow' : 'Enable Glow'}
+        </button>
+        <button className={styles.btn} onClick={toggleTheme}>
+          {currentTheme.charAt(0).toUpperCase() + currentTheme.slice(1)}
         </button>
       </div>
 
