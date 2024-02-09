@@ -4,8 +4,6 @@ import Cell from "./components/cell";
 import styles from './page.module.css';
 
 // Constants for the board
-const numRows = 15;
-const numCols = 30;
 const PATTERNS = [
   [[1, 0], [1, 1], [1, 2]],          // Blinker
   [[0, 1], [1, 1], [2, 1]],          // Glider
@@ -18,22 +16,22 @@ const PATTERNS = [
 const NEIGHBOR_OFFSETS = [[-1, -1], [-1, 0], [-1, 1], [0, -1], [0, 1], [1, -1], [1, 0], [1, 1]];
 
 
-const getIndex = (row, col) => (row + numRows) % numRows * numCols + (col + numCols) % numCols;
+const getIndex = (numRows, numCols, row, col) => (row + numRows) % numRows * numCols + (col + numCols) % numCols;
 
 // Function to generate an empty board
-const generateEmptyBoard = () => Array(numRows * numCols).fill(false);
+const generateEmptyBoard = (numRows, numCols) => Array(numRows * numCols).fill(false);
 
 // Function to update the state of a cell based on its neighbors
-const updateCell = (prevBoard, rowIndex, colIndex) => {
-  const index = getIndex(rowIndex, colIndex);
-  const neighbours = countNeighbors(prevBoard, rowIndex, colIndex);
+const updateCell = (prevBoard, numRows, numCols, rowIndex, colIndex) => {
+  const index = getIndex(numRows, numCols, rowIndex, colIndex);
+  const neighbours = countNeighbors(prevBoard, numRows, numCols, rowIndex, colIndex);
   const isAlive = prevBoard[index];
 
   return isAlive ? (neighbours === 2 || neighbours === 3) : neighbours === 3;
 };
 
 // Function to count the number of live neighbors for a given cell
-const countNeighbors = (prevBoard, i, j) => {
+const countNeighbors = (prevBoard, numRows, numCols, i, j) => {
   let count = 0;
 
   NEIGHBOR_OFFSETS.forEach(([offsetI, offsetJ]) => {
@@ -41,7 +39,7 @@ const countNeighbors = (prevBoard, i, j) => {
     const newCol = j + offsetJ;
 
     // Check if the adjacent cell is within the board boundaries and is alive
-    if (prevBoard[getIndex((newRow + numRows) % numRows, (newCol + numCols) % numCols)])
+    if (prevBoard[getIndex(numRows, numCols, (newRow + numRows) % numRows, (newCol + numCols) % numCols)])
       count++;
   });
 
@@ -62,7 +60,7 @@ const getPatternSize = (pattern) => {
   return { rows: maxRow + 1, cols: maxCol + 1 };
 };
 
-const calculateStartingPosition = (pattern, edge) => {
+const calculateStartingPosition = (numRows, numCols, pattern, edge) => {
   const { rows, cols } = getPatternSize(pattern);
 
   switch (edge) {
@@ -83,8 +81,8 @@ const calculateStartingPosition = (pattern, edge) => {
   }
 };
 
-const Board = ({ board, glowMode, onCellClick }) => (
-  <div className={styles.gameContainer} style={{ gridTemplateColumns: `repeat(${numCols}, var(--cell-size))` }}>
+const Board = ({ board, numRows, numCols, glowMode, onCellClick }) => (
+  <div id="board-container" className={styles.gameContainer}>
     {board.map((cell, index) => (
       <Cell key={index} isAlive={cell} glowMode={glowMode} onClick={() => onCellClick(Math.floor(index / numCols), index % numCols)} />
     ))}
@@ -92,20 +90,22 @@ const Board = ({ board, glowMode, onCellClick }) => (
 );
 
 export default function Home() {
-  const [board, setBoard] = useState(() => generateEmptyBoard());
+  const [board, setBoard] = useState(() => generateEmptyBoard(15, 30));
+  const [numRows, setRows] = useState(15);
+  const [numCols, setCols] = useState(30);
   const [running, setRunning] = useState(false);
   const [idleRunning, setIdleRunning] = useState(false);
   const [glowMode, setGlowMode] = useState(false);
   const [currentTheme, setCurrentTheme] = useState("cyan");
 
   const toggleCell = useCallback((row, col) => {
-    setBoard((prevBoard) => {
+    setBoard(prevBoard => {
       const newBoard = [...prevBoard];
-      const index = getIndex(row, col);
+      const index = getIndex(numRows, numCols, row, col);
       newBoard[index] = !newBoard[index];
       return newBoard;
     });
-  }, [setBoard]);
+  }, [setBoard, numRows, numCols]);
 
   const toggleTheme = useCallback(() => {
     setCurrentTheme((prevTheme) => (prevTheme === "cyan" ? "green" : "cyan"));
@@ -113,30 +113,30 @@ export default function Home() {
 
   const updateBoard = useCallback(() => {
     setBoard((prevBoard) =>
-      prevBoard.map((cell, index) => updateCell(prevBoard, Math.floor(index / numCols), index % numCols))
+      prevBoard.map((cell, index) => updateCell(prevBoard, numRows, numCols, Math.floor(index / numCols), index % numCols))
     );
-  }, [setBoard]);
+  }, [setBoard, numRows, numCols]);
 
   const resetBoard = useCallback(() => {
-    setBoard(generateEmptyBoard());
+    setBoard(generateEmptyBoard(numRows, numCols));
     setRunning(false);
-  }, [setBoard, setRunning]);
+  }, [setBoard, setRunning, numCols, numRows]);
 
-  const addRandomCells = () => {
+  const addRandomCells = useCallback(() => {
     setBoard((prevBoard) => {
       const newBoard = [...prevBoard];
       const pattern = getRandomPattern();
       const randomEdge = Math.floor(Math.random() * 4);
 
-      const [startRow, startCol] = calculateStartingPosition(pattern, randomEdge);
+      const [startRow, startCol] = calculateStartingPosition(numRows, numCols, pattern, randomEdge);
 
       pattern.forEach(([offsetI, offsetJ]) => {
-        newBoard[getIndex(startRow + offsetI, startCol + offsetJ)] = true;
+        newBoard[getIndex(numRows, numCols, startRow + offsetI, startCol + offsetJ)] = true;
       });
 
       return newBoard;
     });
-  };
+  }, [setBoard, numRows, numCols]);
 
   useEffect(() => {
     let interval;
@@ -150,7 +150,28 @@ export default function Home() {
     if (idleRunning)
       idleInterval = setInterval(() => addRandomCells(), 1000);
     return () => clearInterval(idleInterval);
-  }, [idleRunning]);
+  }, [idleRunning, addRandomCells]);
+
+  useEffect(() => {
+    const handleResize = () => {
+      const screenWidth = window.innerWidth;
+      const screenHeight = window.innerHeight;
+
+      const rows = Math.floor((screenHeight * 0.80) / 40);
+      const cols = Math.floor(screenWidth / 40);
+
+      setRows(rows);
+      setCols(cols);
+      setBoard((prevBoard) => Array.from({ length: rows * cols }, (_, i) => prevBoard[i] || false));
+    };
+
+    handleResize();
+    window.addEventListener("resize", handleResize);
+
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
+  }, [])
 
   return (
     <main className={`${styles.mainContainer} ${currentTheme}-theme`}>
@@ -172,7 +193,7 @@ export default function Home() {
         </button>
       </div>
 
-      <Board board={board} glowMode={glowMode} onCellClick={toggleCell} />
+      <Board board={board} numRows={numRows} numCols={numCols} glowMode={glowMode} onCellClick={toggleCell} />
     </main>
   );
 }
