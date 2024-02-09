@@ -1,5 +1,5 @@
 :root {
-  --cell-size: 2.5rem;
+  --cell-size: max(15px, 2.5vw);
   --bg-color: #292929;
   --cell-bg-color: #292929;
   --btn-bg-color: #242424;

@@ -157,8 +157,14 @@ export default function Home() {
       const screenWidth = window.innerWidth;
       const screenHeight = window.innerHeight;
 
-      const rows = Math.floor((screenHeight * 0.80) / 40);
-      const cols = Math.floor(screenWidth / 40);
+      // Get Cell Size
+      const rootComputedStyle = getComputedStyle(document.documentElement);
+      const cellDimensions = rootComputedStyle.getPropertyValue('--cell-size').trim();
+      const cellValues = cellDimensions.match(/\d+\.?\d*/g);
+      const cellSize = Math.max(parseFloat(cellValues[0]), parseFloat(cellValues[1]) * screenWidth / 100);
+
+      const rows = Math.floor((screenHeight * 0.70) / cellSize);
+      const cols = Math.floor(screenWidth / cellSize);
 
       setRows(rows);
       setCols(cols);
