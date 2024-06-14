@@ -1,0 +1,25 @@
+.btnList {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  padding: 8px;
+}
+
+.btn {
+  margin: 0 1.5rem;
+  padding: max(3px, .5vw) max(8px, .8vw);
+  transition: background-color 0.2s, border-color 0.2s, color 0.2s;
+  background-color: var(--btn-bg-color);
+  cursor: pointer;
+  border: 2px solid var(--btn-border-color);
+  border-radius: 5px;
+  font-size: max(12px, 1.8vw);
+  color: var(--btn-text-color);
+}
+
+.btn:hover {
+  background-color: var(--btn-hover-color);
+  border-color: var(--btn-hover-color);
+  color: white;
+}
