@@ -16,10 +16,10 @@ export default function Home() {
   const [idleRunning, setIdleRunning] = useState(false);
   const [glowMode, setGlowMode] = useState(false);
   const [intervalSpeed, setIntervalSpeed] = useState(500);
-  const [currentTheme, setCurrentTheme] = useState("cyan");
+  const [currentTheme, setCurrentTheme] = useState<"cyan" | "green">("cyan");
 
   // Function to toggle the state of a cell
-  const toggleCell = useCallback((row, col) => {
+  const toggleCell = useCallback((row: number, col: number) => {
     setBoard(prevBoard => {
       const newBoard = [...prevBoard];
       const index = (row * numCols + col);
@@ -58,14 +58,14 @@ export default function Home() {
   }, [numRows, numCols]);
 
   useEffect(() => {
-    let interval;
+    let interval: NodeJS.Timeout;
     if (running)
       interval = setInterval(updateBoard, intervalSpeed);
     return () => clearInterval(interval);
   }, [updateBoard, running, intervalSpeed]);
 
   useEffect(() => {
-    let idleInterval;
+    let idleInterval: NodeJS.Timeout;
     if (idleRunning)
       idleInterval = setInterval(addRandomPattern, 2 * intervalSpeed);
     return () => clearInterval(idleInterval);
@@ -80,7 +80,7 @@ export default function Home() {
       const rootComputedStyle = getComputedStyle(document.documentElement);
       const cellDimensions = rootComputedStyle.getPropertyValue('--cell-size').trim();
       const cellValues = cellDimensions.match(/\d+\.?\d*/g);
-      const cellSize = Math.max(parseFloat(cellValues[0]), parseFloat(cellValues[1]) * screenWidth / 100);
+      const cellSize = cellValues ? Math.max(parseFloat(cellValues[0]), parseFloat(cellValues[1]) * screenWidth / 100) : 10;
 
       const rows = Math.floor((screenHeight * 0.70) / cellSize);
       const cols = Math.floor(screenWidth / cellSize);

@@ -1,5 +1,7 @@
+export type Pattern = [number, number][];
+
 // Constants for the board
-const PATTERNS = [
+const PATTERNS: Pattern[] = [
   [[1, 0], [1, 1], [1, 2]],          // Blinker
   [[0, 1], [1, 1], [2, 1]],          // Glider
   [[0, 0], [0, 1], [1, 0], [1, 1]],  // Block
@@ -12,10 +14,10 @@ const PATTERNS = [
 const NEIGHBOR_OFFSETS = [[-1, -1], [-1, 0], [-1, 1], [0, -1], [0, 1], [1, -1], [1, 0], [1, 1]];
 
 // Function to generate an empty board
-const generateEmptyBoard = (numRows, numCols) => Array(numRows * numCols).fill(false);
+const generateEmptyBoard = (numRows: number, numCols: number): boolean[] => Array(numRows * numCols).fill(false);
 
 // Function to count the number of alive neighbors for a given cell
-const countNeighbors = (prevBoard, numRows, numCols, i, j) => {
+const countNeighbors = (prevBoard: boolean[], numRows: number, numCols: number, i: number, j: number) => {
   let count = 0;
 
   NEIGHBOR_OFFSETS.forEach(([offsetI, offsetJ]) => {
@@ -29,7 +31,7 @@ const countNeighbors = (prevBoard, numRows, numCols, i, j) => {
 };
 
 // Function to update the state of a cell based on its neighbors
-const updateCell = (prevBoard, numRows, numCols, rowIndex, colIndex) => {
+const updateCell = (prevBoard: boolean[], numRows: number, numCols: number, rowIndex: number, colIndex: number) => {
   const index = (rowIndex * numCols + colIndex);
   const neighbours = countNeighbors(prevBoard, numRows, numCols, rowIndex, colIndex);
   const isAlive = prevBoard[index];
@@ -37,10 +39,10 @@ const updateCell = (prevBoard, numRows, numCols, rowIndex, colIndex) => {
 };
 
 // Function to get a Random Pattern
-const getRandomPattern = () => PATTERNS[Math.floor(Math.random() * PATTERNS.length)];
+const getRandomPattern = (): Pattern => PATTERNS[Math.floor(Math.random() * PATTERNS.length)];
 
 // Function to get the size of a pattern
-const getPatternSize = (pattern) => {
+const getPatternSize = (pattern: Pattern): { rows: number, cols: number } => {
   let maxRow = 0, maxCol = 0;
 
   pattern.forEach(([offsetI, offsetJ]) => {
@@ -52,7 +54,7 @@ const getPatternSize = (pattern) => {
 };
 
 // Function to get valid starting position for a Pattern on a particular edge 
-const calculateStartingPosition = (numRows, numCols, pattern, edge) => {
+const calculateStartingPosition = (numRows: number, numCols: number, pattern: Pattern, edge: number): [number, number] => {
   const { rows, cols } = getPatternSize(pattern);
 
   switch (edge) {

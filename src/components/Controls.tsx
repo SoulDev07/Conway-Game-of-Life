@@ -1,7 +1,19 @@
 import React from "react";
 import styles from './controls.module.css';
 
-const Controls = ({ running, setRunning, resetBoard, idleRunning, setIdleRunning, setGlowMode, glowMode, toggleTheme, currentTheme }) => (
+interface ControlsProps {
+  running: boolean;
+  setRunning: (running: boolean) => void;
+  resetBoard: () => void;
+  idleRunning: boolean;
+  setIdleRunning: (idleRunning: boolean) => void;
+  setGlowMode: (glowMode: boolean) => void;
+  glowMode: boolean;
+  toggleTheme: () => void;
+  currentTheme: "cyan" | "green";
+}
+
+const Controls: React.FC<ControlsProps> = ({ running, setRunning, resetBoard, idleRunning, setIdleRunning, setGlowMode, glowMode, toggleTheme, currentTheme }) => (
   <div className={styles.btnList}>
     <button className={styles.btn} onClick={() => setRunning(!running)}>
       {running ? 'Stop' : 'Start'}
