@@ -1,8 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  basePath: process.env.NODE_ENV === "production" ? "/Conway-Game-of-Life" : "",
   output: "export",
-  reactStrictMode: true
+  basePath: process.env.NODE_ENV === "production" ? "/Conway-Game-of-Life" : "",
+  reactStrictMode: process.env.NODE_ENV === "production" ? false : true,
 };
 
 export default nextConfig;

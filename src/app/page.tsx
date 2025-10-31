@@ -1,9 +1,9 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 import localFont from 'next/font/local';
-import Board from "../components/Board";
-import Controls from "../components/Controls";
-import { generateEmptyBoard, updateCell, getRandomPattern, calculateStartingPosition } from "../components/Utils";
+import Board from "@/components/Board";
+import Controls from "@/components/Controls";
+import { generateEmptyBoard, updateCell, getRandomPattern, calculateStartingPosition } from "@/lib/game";
 import styles from './page.module.css';
 
 const Tiny5 = localFont({ src: './Tiny5-Regular.ttf' })

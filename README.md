@@ -1,6 +1,6 @@
 # Conway Game of Life
 
-This project is an implementation of the famous cellular automaton devised by mathematician John Conway. The game is built using React and Next.js 14.
+This project is an implementation of the famous cellular automaton devised by mathematician John Conway. The game is built with React 19 and Next.js 16.
 
 - Experience the classic Conway Game of Life on your web browser.
 - Watch as cells evolve based on simple rules and create mesmerizing patterns.
@@ -59,8 +59,8 @@ npm run dev
 
 ## Tech Stack
 
-- React
-- Next.js
+- React 19
+- Next.js 16
 
 ## License
 
