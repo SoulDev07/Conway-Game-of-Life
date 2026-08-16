@@ -1,0 +1,30 @@
+.container {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 5px 14px;
+  border-radius: 4px;
+  border: 1px solid;
+  font-family: var(--font-pixel), monospace;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+}
+
+.item {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.label {
+  font-size: 0.95rem;
+  letter-spacing: 0.05em;
+}
+
+.value {
+  font-size: 1.05rem;
+}
+
+.divider {
+  width: 1px;
+  height: 14px;
+}
