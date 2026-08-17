@@ -31,21 +31,6 @@ export const BACKGROUND_KEYS = Object.keys(BACKGROUND_OPTIONS) as BackgroundKey[
 export const DEFAULT_BACKGROUND_KEY: BackgroundKey = "classic";
 
 export const THEMES: Record<ThemeKey, Theme> = {
-  cyan: {
-    id: "cyan",
-    name: "Cyan",
-    bgColor: "#292929",
-    bgSecondary: "#212121",
-    cellColor: "#66FCF1",
-    cellGlowColor: "rgba(102, 252, 241, 0.55)",
-    cellAgeColor: "#7000ff",
-    trailColor: "rgba(102, 252, 241, 0.85)",
-    accentColor: "#66FCF1",
-    borderSubtle: "rgba(102, 252, 241, 0.3)",
-    textPrimary: "#ffffff",
-    textMuted: "#9ca3af",
-    gridLineColor: "transparent",
-  },
   green: {
     id: "green",
     name: "Green",
@@ -58,22 +43,22 @@ export const THEMES: Record<ThemeKey, Theme> = {
     accentColor: "#38D352",
     borderSubtle: "rgba(56, 211, 82, 0.3)",
     textPrimary: "#ffffff",
-    textMuted: "#9ca3af",
+    textMuted: "#d1d5db",
     gridLineColor: "transparent",
   },
-  synthwave: {
-    id: "synthwave",
-    name: "Magenta",
+  cyan: {
+    id: "cyan",
+    name: "Cyan",
     bgColor: "#292929",
     bgSecondary: "#212121",
-    cellColor: "#ff2a85",
-    cellGlowColor: "rgba(255, 42, 133, 0.55)",
-    cellAgeColor: "#9b51e0",
-    trailColor: "rgba(255, 42, 133, 0.85)",
-    accentColor: "#ff2a85",
-    borderSubtle: "rgba(255, 42, 133, 0.3)",
+    cellColor: "#66FCF1",
+    cellGlowColor: "rgba(102, 252, 241, 0.55)",
+    cellAgeColor: "#7000ff",
+    trailColor: "rgba(102, 252, 241, 0.85)",
+    accentColor: "#66FCF1",
+    borderSubtle: "rgba(102, 252, 241, 0.3)",
     textPrimary: "#ffffff",
-    textMuted: "#9ca3af",
+    textMuted: "#d1d5db",
     gridLineColor: "transparent",
   },
   amber: {
@@ -88,7 +73,7 @@ export const THEMES: Record<ThemeKey, Theme> = {
     accentColor: "#ffb000",
     borderSubtle: "rgba(255, 176, 0, 0.3)",
     textPrimary: "#ffffff",
-    textMuted: "#9ca3af",
+    textMuted: "#d1d5db",
     gridLineColor: "transparent",
   },
   crimson: {
@@ -103,7 +88,22 @@ export const THEMES: Record<ThemeKey, Theme> = {
     accentColor: "#ff2453",
     borderSubtle: "rgba(255, 36, 83, 0.3)",
     textPrimary: "#ffffff",
-    textMuted: "#9ca3af",
+    textMuted: "#d1d5db",
+    gridLineColor: "transparent",
+  },
+  synthwave: {
+    id: "synthwave",
+    name: "Magenta",
+    bgColor: "#292929",
+    bgSecondary: "#212121",
+    cellColor: "#ff2a85",
+    cellGlowColor: "rgba(255, 42, 133, 0.55)",
+    cellAgeColor: "#9b51e0",
+    trailColor: "rgba(255, 42, 133, 0.85)",
+    accentColor: "#ff2a85",
+    borderSubtle: "rgba(255, 42, 133, 0.3)",
+    textPrimary: "#ffffff",
+    textMuted: "#d1d5db",
     gridLineColor: "transparent",
   },
   monochrome: {
@@ -118,10 +118,17 @@ export const THEMES: Record<ThemeKey, Theme> = {
     accentColor: "#f4f6f8",
     borderSubtle: "rgba(255, 255, 255, 0.3)",
     textPrimary: "#ffffff",
-    textMuted: "#9ca3af",
+    textMuted: "#d1d5db",
     gridLineColor: "transparent",
   },
 };
 
-export const THEME_KEYS = Object.keys(THEMES) as ThemeKey[];
-export const DEFAULT_THEME_KEY: ThemeKey = "cyan";
+export const THEME_KEYS: ThemeKey[] = [
+  "green",
+  "cyan",
+  "amber",
+  "crimson",
+  "synthwave",
+  "monochrome",
+];
+export const DEFAULT_THEME_KEY: ThemeKey = "green";

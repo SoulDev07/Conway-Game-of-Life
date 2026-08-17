@@ -150,6 +150,8 @@ export const PixelCursorTrail: React.FC<PixelCursorTrailProps> = ({ theme, glowM
   return (
     <canvas
       ref={canvasRef}
+      aria-hidden="true"
+      tabIndex={-1}
       style={{
         position: "fixed",
         top: 0,

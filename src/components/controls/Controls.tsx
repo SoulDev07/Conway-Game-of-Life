@@ -1,7 +1,7 @@
 "use client";
 
 import type React from "react";
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   BACKGROUND_KEYS,
   BACKGROUND_OPTIONS,
@@ -32,6 +32,7 @@ interface ControlsProps {
   generation: number;
   aliveCount: number;
   theme: Theme;
+  isStamping?: boolean;
 }
 
 export const Controls: React.FC<ControlsProps> = ({
@@ -54,13 +55,31 @@ export const Controls: React.FC<ControlsProps> = ({
   generation,
   aliveCount,
   theme,
+  isStamping = false,
 }) => {
   const [themeMenuOpen, setThemeMenuOpen] = useState(false);
   const [bgMenuOpen, setBgMenuOpen] = useState(false);
 
+  const handleGlobalKeyDown = useCallback(
+    (e: KeyboardEvent) => {
+      if (e.key === "Escape" && (themeMenuOpen || bgMenuOpen)) {
+        setThemeMenuOpen(false);
+        setBgMenuOpen(false);
+      }
+    },
+    [themeMenuOpen, bgMenuOpen],
+  );
+
+  useEffect(() => {
+    window.addEventListener("keydown", handleGlobalKeyDown);
+    return () => window.removeEventListener("keydown", handleGlobalKeyDown);
+  }, [handleGlobalKeyDown]);
+
   return (
     <div
       className={styles.dock}
+      role="toolbar"
+      aria-label="Simulation controls"
       style={{
         background: theme.bgSecondary,
         borderColor: theme.borderSubtle,
@@ -68,97 +87,118 @@ export const Controls: React.FC<ControlsProps> = ({
     >
       <div className={styles.group}>
         <button
-          className={`${styles.btn} ${running ? styles.activeBtn : ""}`}
+          type="button"
+          className={`${styles.btn} ${styles.primaryBtn} ${running ? styles.activeBtn : ""}`}
           onClick={onToggleRunning}
+          aria-pressed={running}
           style={{
             borderColor: running ? theme.accentColor : theme.borderSubtle,
             color: running ? theme.bgColor : theme.textPrimary,
             background: running ? theme.accentColor : "transparent",
           }}
+          aria-label={running ? "Pause simulation" : "Start simulation"}
         >
           {running ? "Stop" : "Start"}
         </button>
 
         <button
-          className={styles.btn}
-          onClick={onClear}
-          style={{
-            borderColor: theme.borderSubtle,
-            color: theme.textPrimary,
-          }}
-        >
-          Reset
-        </button>
-
-        <button
+          type="button"
           className={styles.btn}
           onClick={onStep}
           disabled={running}
           style={{
             borderColor: theme.borderSubtle,
             color: theme.textPrimary,
-            opacity: running ? 0.3 : 1,
+            opacity: running ? 0.35 : 1,
           }}
+          aria-label="Step simulation forward one generation"
         >
           Step
         </button>
-      </div>
 
-      <div className={styles.divider} style={{ background: theme.borderSubtle }} />
-
-      <div className={styles.group}>
         <button
+          type="button"
+          className={styles.btn}
+          onClick={onClear}
+          style={{
+            borderColor: theme.borderSubtle,
+            color: theme.textPrimary,
+          }}
+          aria-label="Clear grid"
+        >
+          Reset
+        </button>
+
+        <button
+          type="button"
           className={styles.btn}
           onClick={onRandom}
           style={{
             borderColor: theme.borderSubtle,
             color: theme.textPrimary,
           }}
+          aria-label="Randomize board cells"
         >
           Random
         </button>
 
         <button
-          className={styles.btn}
+          type="button"
+          className={`${styles.btn} ${isStamping ? styles.activeToggle : ""}`}
           onClick={onOpenPresets}
+          aria-haspopup="dialog"
+          aria-pressed={isStamping}
           style={{
-            borderColor: theme.borderSubtle,
-            color: theme.textPrimary,
+            borderColor: isStamping ? theme.accentColor : theme.borderSubtle,
+            color: isStamping ? theme.accentColor : theme.textPrimary,
+            background: isStamping ? "rgba(255, 255, 255, 0.08)" : "transparent",
           }}
+          aria-label="Open pattern presets library"
         >
           Patterns
         </button>
+      </div>
 
+      <div
+        className={styles.divider}
+        style={{ background: theme.borderSubtle }}
+        aria-hidden="true"
+      />
+
+      <div className={styles.group}>
         <button
+          type="button"
           className={`${styles.btn} ${idleRunning ? styles.activeToggle : ""}`}
           onClick={onToggleIdle}
+          aria-pressed={idleRunning}
           style={{
             borderColor: idleRunning ? theme.accentColor : theme.borderSubtle,
             color: idleRunning ? theme.accentColor : theme.textPrimary,
             background: idleRunning ? "rgba(255, 255, 255, 0.08)" : "transparent",
           }}
+          aria-label="Toggle idle pattern generation"
         >
-          {idleRunning ? "Stop Idle" : "Start Idle"}
+          {idleRunning ? "Idle: ON" : "Idle"}
         </button>
-      </div>
 
-      <div className={styles.divider} style={{ background: theme.borderSubtle }} />
-
-      <div className={styles.group}>
         <button
+          type="button"
           className={`${styles.btn} ${glowMode ? styles.activeToggle : ""}`}
           onClick={onToggleGlow}
+          aria-pressed={glowMode}
           style={{
             borderColor: glowMode ? theme.accentColor : theme.borderSubtle,
             color: glowMode ? theme.accentColor : theme.textPrimary,
             background: glowMode ? "rgba(255, 255, 255, 0.08)" : "transparent",
           }}
+          aria-label="Toggle cell glow effect"
         >
-          {glowMode ? "Disable Glow" : "Enable Glow"}
+          {glowMode ? "Glow: ON" : "Glow"}
         </button>
 
         <div className={styles.dropdownWrap}>
           <button
+            type="button"
             className={styles.btn}
             onClick={() => {
               setThemeMenuOpen(!themeMenuOpen);
@@ -168,15 +208,26 @@ export const Controls: React.FC<ControlsProps> = ({
               borderColor: theme.borderSubtle,
               color: theme.accentColor,
             }}
+            aria-label="Select color theme"
+            aria-haspopup="listbox"
+            aria-expanded={themeMenuOpen}
+            aria-controls="theme-menu-listbox"
           >
             {theme.name} ▾
           </button>
 
           {themeMenuOpen && (
             <>
-              <div className={styles.backdrop} onClick={() => setThemeMenuOpen(false)} />
               <div
+                className={styles.backdrop}
+                onClick={() => setThemeMenuOpen(false)}
+                aria-hidden="true"
+              />
+              <div
+                id="theme-menu-listbox"
                 className={styles.menu}
+                role="listbox"
+                aria-label="Color theme options"
                 style={{
                   background: theme.bgSecondary,
                   borderColor: theme.borderSubtle,
@@ -188,6 +239,9 @@ export const Controls: React.FC<ControlsProps> = ({
                   return (
                     <button
                       key={key}
+                      type="button"
+                      role="option"
+                      aria-selected={isSelected}
                       className={styles.menuOption}
                       onClick={() => {
                         onSelectTheme(key);
@@ -195,8 +249,14 @@ export const Controls: React.FC<ControlsProps> = ({
                       }}
                       style={{
                         color: isSelected ? t.accentColor : theme.textPrimary,
+                        fontWeight: isSelected ? 700 : 400,
                       }}
                     >
+                      <span
+                        className={styles.themePreviewDot}
+                        style={{ background: t.accentColor }}
+                        aria-hidden="true"
+                      />
                       {t.name}
                     </button>
                   );
@@ -208,6 +268,7 @@ export const Controls: React.FC<ControlsProps> = ({
 
         <div className={styles.dropdownWrap}>
           <button
+            type="button"
             className={styles.btn}
             onClick={() => {
               setBgMenuOpen(!bgMenuOpen);
@@ -217,15 +278,26 @@ export const Controls: React.FC<ControlsProps> = ({
               borderColor: theme.borderSubtle,
               color: theme.textPrimary,
             }}
+            aria-label="Select background color"
+            aria-haspopup="listbox"
+            aria-expanded={bgMenuOpen}
+            aria-controls="bg-menu-listbox"
           >
             BG: {BACKGROUND_OPTIONS[currentBgKey].name} ▾
           </button>
 
           {bgMenuOpen && (
             <>
-              <div className={styles.backdrop} onClick={() => setBgMenuOpen(false)} />
               <div
+                className={styles.backdrop}
+                onClick={() => setBgMenuOpen(false)}
+                aria-hidden="true"
+              />
+              <div
+                id="bg-menu-listbox"
                 className={styles.menu}
+                role="listbox"
+                aria-label="Background color options"
                 style={{
                   background: theme.bgSecondary,
                   borderColor: theme.borderSubtle,
@@ -237,6 +309,9 @@ export const Controls: React.FC<ControlsProps> = ({
                   return (
                     <button
                       key={key}
+                      type="button"
+                      role="option"
+                      aria-selected={isSelected}
                       className={styles.menuOption}
                       onClick={() => {
                         onSelectBg(key);
@@ -244,9 +319,14 @@ export const Controls: React.FC<ControlsProps> = ({
                       }}
                       style={{
                         color: isSelected ? theme.accentColor : theme.textPrimary,
+                        fontWeight: isSelected ? 700 : 400,
                       }}
                     >
-                      <span className={styles.bgPreviewDot} style={{ background: bg.color }} />
+                      <span
+                        className={styles.bgPreviewDot}
+                        style={{ background: bg.color }}
+                        aria-hidden="true"
+                      />
                       {bg.name}
                     </button>
                   );
@@ -255,13 +335,11 @@ export const Controls: React.FC<ControlsProps> = ({
             </>
           )}
         </div>
-      </div>
 
-      <div className={styles.divider} style={{ background: theme.borderSubtle }} />
-
-      <div className={styles.group}>
         <div className={styles.speedWrap}>
           <select
+            id="speed-select"
+            aria-label="Simulation speed"
             className={styles.select}
             value={speed}
             onChange={(e) => onChangeSpeed(Number(e.target.value))}
@@ -278,21 +356,27 @@ export const Controls: React.FC<ControlsProps> = ({
             ))}
           </select>
         </div>
+      </div>
 
-        <div className={styles.statsInline}>
-          <span className={styles.statLabel} style={{ color: theme.textMuted }}>
-            GEN:
-          </span>
-          <span className={styles.statVal} style={{ color: theme.textPrimary }}>
-            {generation}
-          </span>
-          <span className={styles.statLabel} style={{ color: theme.textMuted }}>
-            ALIVE:
-          </span>
-          <span className={styles.statVal} style={{ color: theme.accentColor }}>
-            {aliveCount}
-          </span>
-        </div>
+      <div
+        className={styles.divider}
+        style={{ background: theme.borderSubtle }}
+        aria-hidden="true"
+      />
+
+      <div className={styles.statsInline} role="status" aria-live="polite" aria-atomic="true">
+        <span className={styles.statLabel} style={{ color: theme.textMuted }}>
+          GEN:
+        </span>
+        <span className={styles.statVal} style={{ color: theme.textPrimary }}>
+          {generation}
+        </span>
+        <span className={styles.statLabel} style={{ color: theme.textMuted }}>
+          ALIVE:
+        </span>
+        <span className={styles.statVal} style={{ color: theme.accentColor }}>
+          {aliveCount}
+        </span>
       </div>
     </div>
   );

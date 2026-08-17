@@ -33,19 +33,58 @@ export function useGameSimulation(initialRows: number, initialCols: number) {
 
   useEffect(() => {
     if (!running) return;
-    const interval = setInterval(step, speed);
-    return () => clearInterval(interval);
-  }, [running, speed, step]);
+
+    let animId: number;
+    let lastTime = performance.now();
+    let accumulator = 0;
+
+    const loop = (currentTime: number) => {
+      const delta = currentTime - lastTime;
+      lastTime = currentTime;
+
+      accumulator += Math.min(delta, 1000);
+
+      if (accumulator >= speed) {
+        setBoard((prev) => {
+          let nextBoard = prev;
+          while (accumulator >= speed) {
+            nextBoard = stepSimulation(nextBoard);
+            accumulator -= speed;
+          }
+          return nextBoard;
+        });
+      }
+
+      animId = requestAnimationFrame(loop);
+    };
+
+    animId = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(animId);
+  }, [running, speed]);
 
   useEffect(() => {
     if (!idleRunning) return;
-    const interval = setInterval(
-      () => {
+
+    let animId: number;
+    let lastTime = performance.now();
+    let accumulator = 0;
+    const idleInterval = Math.max(1000, speed * 2);
+
+    const loop = (currentTime: number) => {
+      const delta = currentTime - lastTime;
+      lastTime = currentTime;
+      accumulator += Math.min(delta, 2000);
+
+      if (accumulator >= idleInterval) {
         setBoard((prev) => injectRandomEdgePattern(prev));
-      },
-      Math.max(1000, speed * 2),
-    );
-    return () => clearInterval(interval);
+        accumulator -= idleInterval;
+      }
+
+      animId = requestAnimationFrame(loop);
+    };
+
+    animId = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(animId);
   }, [idleRunning, speed]);
 
   const toggleRunning = useCallback(() => {

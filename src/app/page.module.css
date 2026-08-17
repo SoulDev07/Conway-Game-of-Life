@@ -1,26 +1,29 @@
 .main {
   width: 100vw;
-  height: 100vh;
+  height: 100dvh;
   display: flex;
   flex-direction: column;
   position: relative;
   overflow: hidden;
   transition: background-color 0.2s ease;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .topSection {
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 0.75rem 1rem 0.25rem;
+  padding: 0.6rem 1rem 0.2rem;
   z-index: 40;
   pointer-events: none;
+  flex-shrink: 0;
 }
 
 .title {
-  font-size: max(28px, 4.5vw);
+  font-size: clamp(1.25rem, 4vw, 2.5rem);
   letter-spacing: 0.05em;
-  line-height: 1;
+  line-height: 1.1;
   margin: 0;
   text-align: center;
   pointer-events: auto;
@@ -30,9 +33,65 @@
 .canvasContainer {
   flex: 1;
   width: 100%;
-  height: 100%;
+  min-height: 0;
   position: relative;
   overflow: hidden;
+  display: flex;
+}
+
+.stampBanner {
+  position: absolute;
+  top: 4.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 14px;
+  border-radius: 4px;
+  border: 1px solid;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
+  font-family: var(--font-pixel), monospace;
+  font-size: 0.9rem;
+  pointer-events: auto;
+  animation: fadeIn 0.15s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -8px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+.stampText {
+  letter-spacing: 0.04em;
+}
+
+.stampHint {
+  font-size: 0.78rem;
+  opacity: 0.75;
+}
+
+.cancelStampBtn {
+  background: transparent;
+  border: 1px solid;
+  border-radius: 3px;
+  padding: 2px 8px;
+  font-family: var(--font-pixel), monospace;
+  font-size: 0.8rem;
+  cursor: pointer;
+  letter-spacing: 0.04em;
+  transition: all 0.1s ease;
+}
+
+.cancelStampBtn:hover {
+  background: rgba(255, 255, 255, 0.15);
 }
 
 .bottomSection {
@@ -40,9 +99,10 @@
   flex-direction: column;
   align-items: center;
   gap: 4px;
-  padding: 0.25rem 0.5rem 0.6rem;
+  padding: 0.2rem 0.5rem 0.5rem;
   z-index: 40;
   pointer-events: none;
+  flex-shrink: 0;
 }
 
 .dockWrapper {
@@ -50,25 +110,37 @@
 }
 
 .hint {
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   letter-spacing: 0.04em;
-  opacity: 0.6;
+  opacity: 0.65;
   pointer-events: none;
   font-family: var(--font-pixel), monospace;
   margin: 0;
+  text-align: center;
 }
 
 @media (max-width: 768px) {
   .topSection {
-    padding: 0.4rem;
+    padding: 0.35rem 0.5rem 0.1rem;
   }
   .title {
-    font-size: 1.8rem;
+    font-size: clamp(1.15rem, 5.5vw, 1.6rem);
   }
   .hint {
     display: none;
   }
+  .stampBanner {
+    top: 3.2rem;
+    font-size: 0.78rem;
+    padding: 4px 10px;
+    gap: 8px;
+    width: max-content;
+    max-width: 90vw;
+  }
+  .stampHint {
+    display: none;
+  }
   .bottomSection {
-    padding-bottom: 0.4rem;
+    padding-bottom: 0.35rem;
   }
 }

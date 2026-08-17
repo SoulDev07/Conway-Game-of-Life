@@ -14,7 +14,7 @@ export default function Home() {
   const [bgKey, setBgKey] = useState<BackgroundKey>(DEFAULT_BACKGROUND_KEY);
   const bgOption = BACKGROUND_OPTIONS[bgKey];
 
-  const [glowMode, setGlowMode] = useState(true);
+  const [glowMode, setGlowMode] = useState(false);
   const [patternPickerOpen, setPatternPickerOpen] = useState(false);
   const [selectedPattern, setSelectedPattern] = useState<PresetPattern | null>(null);
 
@@ -74,7 +74,7 @@ export default function Home() {
         </h1>
       </header>
 
-      <div className={styles.canvasContainer}>
+      <section className={styles.canvasContainer} aria-label="Game of Life grid canvas">
         <LifeCanvas
           board={board}
           theme={theme}
@@ -84,8 +84,42 @@ export default function Home() {
           onStampPattern={handleStampPattern}
           onResize={resize}
           isStamping={selectedPattern !== null}
+          selectedPattern={selectedPattern}
         />
-      </div>
+      </section>
+
+      {selectedPattern && (
+        <div
+          className={styles.stampBanner}
+          role="status"
+          aria-live="polite"
+          style={{
+            background: theme.bgSecondary,
+            borderColor: theme.accentColor,
+            color: theme.textPrimary,
+          }}
+        >
+          <span className={styles.stampText}>
+            STAMP:{" "}
+            <strong style={{ color: theme.accentColor }}>
+              {selectedPattern.name.toUpperCase()}
+            </strong>
+            <span className={styles.stampHint}> • TAP GRID TO PLACE</span>
+          </span>
+          <button
+            type="button"
+            className={styles.cancelStampBtn}
+            onClick={() => setSelectedPattern(null)}
+            aria-label={`Cancel stamping ${selectedPattern.name}`}
+            style={{
+              borderColor: theme.accentColor,
+              color: theme.accentColor,
+            }}
+          >
+            CANCEL
+          </button>
+        </div>
+      )}
 
       <footer className={styles.bottomSection}>
         <div className={styles.dockWrapper}>
@@ -109,6 +143,7 @@ export default function Home() {
             generation={board.generation}
             aliveCount={board.aliveCount}
             theme={theme}
+            isStamping={selectedPattern !== null}
           />
         </div>
         <p className={styles.hint} style={{ color: theme.textMuted }}>

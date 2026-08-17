@@ -1,9 +1,75 @@
 "use client";
 
 import type React from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { PATTERN_PRESETS } from "@/constants";
-import type { PresetPattern, Theme } from "@/types";
+import type { PatternCategory, PresetPattern, Theme } from "@/types";
 import styles from "./PatternPicker.module.css";
+
+const CATEGORIES: Array<"All" | PatternCategory> = [
+  "All",
+  "Spaceship",
+  "Gun",
+  "Oscillator",
+  "Still Life",
+  "Methuselah",
+];
+
+const PatternPreview: React.FC<{ pattern: PresetPattern; color: string }> = ({
+  pattern,
+  color,
+}) => {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    let minR = Number.POSITIVE_INFINITY;
+    let maxR = Number.NEGATIVE_INFINITY;
+    let minC = Number.POSITIVE_INFINITY;
+    let maxC = Number.NEGATIVE_INFINITY;
+
+    for (const [r, c] of pattern.grid) {
+      if (r < minR) minR = r;
+      if (r > maxR) maxR = r;
+      if (c < minC) minC = c;
+      if (c > maxC) maxC = c;
+    }
+
+    const pRows = maxR - minR + 1;
+    const pCols = maxC - minC + 1;
+
+    const width = canvas.width;
+    const height = canvas.height;
+    ctx.clearRect(0, 0, width, height);
+
+    const padding = 4;
+    const availableW = width - padding * 2;
+    const availableH = height - padding * 2;
+
+    const cellSize = Math.max(
+      2,
+      Math.min(8, Math.floor(Math.min(availableW / pCols, availableH / pRows))),
+    );
+
+    const patternDrawW = pCols * cellSize;
+    const patternDrawH = pRows * cellSize;
+    const startX = Math.floor((width - patternDrawW) / 2);
+    const startY = Math.floor((height - patternDrawH) / 2);
+
+    ctx.fillStyle = color;
+    for (const [r, c] of pattern.grid) {
+      const x = startX + (c - minC) * cellSize;
+      const y = startY + (r - minR) * cellSize;
+      ctx.fillRect(x, y, Math.max(1, cellSize - 1), Math.max(1, cellSize - 1));
+    }
+  }, [pattern, color]);
+
+  return <canvas ref={canvasRef} width={48} height={48} className={styles.previewCanvas} />;
+};
 
 interface PatternPickerProps {
   isOpen: boolean;
@@ -18,12 +84,49 @@ export const PatternPicker: React.FC<PatternPickerProps> = ({
   onSelectPattern,
   theme,
 }) => {
+  const [selectedCategory, setSelectedCategory] = useState<"All" | PatternCategory>("All");
+  const [searchQuery, setSearchQuery] = useState("");
+  const modalRef = useRef<HTMLDivElement | null>(null);
+
+  const filteredPatterns = useMemo(() => {
+    return PATTERN_PRESETS.filter((p) => {
+      const matchesCategory = selectedCategory === "All" || p.category === selectedCategory;
+      const q = searchQuery.trim().toLowerCase();
+      const matchesSearch =
+        !q ||
+        p.name.toLowerCase().includes(q) ||
+        p.description.toLowerCase().includes(q) ||
+        p.category.toLowerCase().includes(q);
+      return matchesCategory && matchesSearch;
+    });
+  }, [selectedCategory, searchQuery]);
+
+  const handleKeyDown = useCallback(
+    (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        onClose();
+      }
+    },
+    [onClose],
+  );
+
+  useEffect(() => {
+    if (!isOpen) return;
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, handleKeyDown]);
+
   if (!isOpen) return null;
 
   return (
     <div className={styles.overlay} onClick={onClose}>
       <div
+        ref={modalRef}
         className={styles.modal}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="pattern-picker-title"
+        aria-describedby="pattern-picker-desc"
         onClick={(e) => e.stopPropagation()}
         style={{
           background: theme.bgSecondary,
@@ -31,55 +134,129 @@ export const PatternPicker: React.FC<PatternPickerProps> = ({
         }}
       >
         <div className={styles.header}>
-          <h2 className={styles.title} style={{ color: theme.accentColor }}>
-            SELECT PATTERN
-          </h2>
+          <div className={styles.titleWrap}>
+            <h2
+              id="pattern-picker-title"
+              className={styles.title}
+              style={{ color: theme.accentColor }}
+            >
+              SELECT PATTERN
+            </h2>
+            <span className={styles.countBadge} style={{ color: theme.textMuted }}>
+              ({filteredPatterns.length})
+            </span>
+          </div>
           <button
+            type="button"
             className={styles.closeBtn}
             onClick={onClose}
             style={{ color: theme.textMuted }}
-            aria-label="Close modal"
+            aria-label="Close pattern picker"
           >
             ✕
           </button>
         </div>
 
-        <p className={styles.subtitle} style={{ color: theme.textMuted }}>
-          Click a pattern to stamp it on the grid.
+        <p id="pattern-picker-desc" className={styles.subtitle} style={{ color: theme.textMuted }}>
+          Choose a pattern to stamp onto the grid.
         </p>
 
-        <div className={styles.grid}>
-          {PATTERN_PRESETS.map((p) => (
-            <div
-              key={p.name}
-              className={styles.card}
-              onClick={() => {
-                onSelectPattern(p);
-                onClose();
-              }}
-              style={{
-                borderColor: theme.borderSubtle,
-              }}
-            >
-              <div className={styles.cardHeader}>
-                <span className={styles.patternName} style={{ color: theme.textPrimary }}>
-                  {p.name.toUpperCase()}
-                </span>
-                <span
-                  className={styles.categoryBadge}
+        <div className={styles.filterSection}>
+          <input
+            type="search"
+            className={styles.searchInput}
+            placeholder="Search patterns..."
+            aria-label="Search pattern presets"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            style={{
+              borderColor: theme.borderSubtle,
+              color: theme.textPrimary,
+              background: theme.bgColor,
+            }}
+          />
+
+          <div
+            className={styles.categoryTabs}
+            role="tablist"
+            aria-label="Filter patterns by category"
+          >
+            {CATEGORIES.map((cat) => {
+              const isSelected = selectedCategory === cat;
+              return (
+                <button
+                  key={cat}
+                  type="button"
+                  role="tab"
+                  aria-selected={isSelected}
+                  className={`${styles.categoryTab} ${isSelected ? styles.categoryTabActive : ""}`}
+                  onClick={() => setSelectedCategory(cat)}
                   style={{
-                    color: theme.accentColor,
-                    borderColor: theme.borderSubtle,
+                    borderColor: isSelected ? theme.accentColor : theme.borderSubtle,
+                    color: isSelected ? theme.accentColor : theme.textMuted,
+                    background: isSelected ? "rgba(255, 255, 255, 0.08)" : "transparent",
                   }}
                 >
-                  {p.category.toUpperCase()}
-                </span>
-              </div>
-              <p className={styles.cardDesc} style={{ color: theme.textMuted }}>
-                {p.description}
-              </p>
+                  {cat}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className={styles.grid} role="listbox" aria-label="Available patterns">
+          {filteredPatterns.length === 0 ? (
+            <div className={styles.emptyState} style={{ color: theme.textMuted }}>
+              No patterns found matching &quot;{searchQuery}&quot;
             </div>
-          ))}
+          ) : (
+            filteredPatterns.map((p) => (
+              <div
+                key={p.name}
+                role="option"
+                aria-selected={false}
+                tabIndex={0}
+                className={styles.card}
+                onClick={() => {
+                  onSelectPattern(p);
+                  onClose();
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    onSelectPattern(p);
+                    onClose();
+                  }
+                }}
+                style={{
+                  borderColor: theme.borderSubtle,
+                }}
+              >
+                <div className={styles.cardLeft}>
+                  <PatternPreview pattern={p} color={theme.cellColor} />
+                </div>
+                <div className={styles.cardRight}>
+                  <div className={styles.cardHeader}>
+                    <span className={styles.patternName} style={{ color: theme.textPrimary }}>
+                      {p.name.toUpperCase()}
+                    </span>
+                    <span
+                      className={styles.categoryBadge}
+                      style={{
+                        color: theme.accentColor,
+                        borderColor: theme.borderSubtle,
+                      }}
+                    >
+                      {p.category.toUpperCase()}
+                    </span>
+                  </div>
+                  <p className={styles.cardDesc} style={{ color: theme.textMuted }}>
+                    {p.description}
+                  </p>
+                </div>
+              </div>
+            ))
+          )}
         </div>
       </div>
     </div>

@@ -14,7 +14,7 @@ export interface Theme {
   gridLineColor: string;
 }
 
-export type ThemeKey = "cyan" | "green" | "synthwave" | "amber" | "crimson" | "monochrome";
+export type ThemeKey = "green" | "cyan" | "amber" | "crimson" | "synthwave" | "monochrome";
 
 export type BackgroundKey = "classic" | "void" | "black" | "slate";
 

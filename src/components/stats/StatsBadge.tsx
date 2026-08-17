@@ -14,6 +14,9 @@ export const StatsBadge: React.FC<StatsBadgeProps> = ({ generation, aliveCount, 
   return (
     <div
       className={styles.container}
+      role="status"
+      aria-live="polite"
+      aria-atomic="true"
       style={{
         background: theme.bgSecondary,
         borderColor: theme.borderSubtle,
