@@ -4,5 +4,6 @@ export interface PresetPattern {
   name: string;
   category: PatternCategory;
   description: string;
+  rle: string;
   grid: number[][];
 }

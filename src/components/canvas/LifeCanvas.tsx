@@ -15,7 +15,7 @@ interface LifeCanvasProps {
   onStampPattern: (row: number, col: number) => void;
   onResize: (rows: number, cols: number) => void;
   isStamping: boolean;
-  selectedPattern?: PresetPattern | null;
+  selectedPattern: PresetPattern | null;
 }
 
 export const LifeCanvas: React.FC<LifeCanvasProps> = ({

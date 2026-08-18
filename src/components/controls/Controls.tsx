@@ -32,7 +32,7 @@ interface ControlsProps {
   generation: number;
   aliveCount: number;
   theme: Theme;
-  isStamping?: boolean;
+  isStamping: boolean;
 }
 
 export const Controls: React.FC<ControlsProps> = ({
@@ -55,7 +55,7 @@ export const Controls: React.FC<ControlsProps> = ({
   generation,
   aliveCount,
   theme,
-  isStamping = false,
+  isStamping,
 }) => {
   const [themeMenuOpen, setThemeMenuOpen] = useState(false);
   const [bgMenuOpen, setBgMenuOpen] = useState(false);

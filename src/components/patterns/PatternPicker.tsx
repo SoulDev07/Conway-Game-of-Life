@@ -4,6 +4,7 @@ import type React from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { PATTERN_PRESETS } from "@/constants";
 import type { PatternCategory, PresetPattern, Theme } from "@/types";
+import { PatternImport } from "./PatternImport";
 import styles from "./PatternPicker.module.css";
 
 const CATEGORIES: Array<"All" | PatternCategory> = [
@@ -84,6 +85,7 @@ export const PatternPicker: React.FC<PatternPickerProps> = ({
   onSelectPattern,
   theme,
 }) => {
+  const [activeTab, setActiveTab] = useState<"library" | "import">("library");
   const [selectedCategory, setSelectedCategory] = useState<"All" | PatternCategory>("All");
   const [searchQuery, setSearchQuery] = useState("");
   const modalRef = useRef<HTMLDivElement | null>(null);
@@ -140,11 +142,13 @@ export const PatternPicker: React.FC<PatternPickerProps> = ({
               className={styles.title}
               style={{ color: theme.accentColor }}
             >
-              SELECT PATTERN
+              {activeTab === "library" ? "SELECT PATTERN" : "IMPORT PATTERN"}
             </h2>
-            <span className={styles.countBadge} style={{ color: theme.textMuted }}>
-              ({filteredPatterns.length})
-            </span>
+            {activeTab === "library" && (
+              <span className={styles.countBadge} style={{ color: theme.textMuted }}>
+                ({filteredPatterns.length})
+              </span>
+            )}
           </div>
           <button
             type="button"
@@ -158,106 +162,147 @@ export const PatternPicker: React.FC<PatternPickerProps> = ({
         </div>
 
         <p id="pattern-picker-desc" className={styles.subtitle} style={{ color: theme.textMuted }}>
-          Choose a pattern to stamp onto the grid.
+          {activeTab === "library"
+            ? "Choose a pattern to stamp onto the grid."
+            : "Import a custom pattern from LifeWiki RLE or .cells format."}
         </p>
 
-        <div className={styles.filterSection}>
-          <input
-            type="search"
-            className={styles.searchInput}
-            placeholder="Search patterns..."
-            aria-label="Search pattern presets"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+        <div className={styles.tabBar} role="tablist" aria-label="Pattern picker tabs">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={activeTab === "library"}
+            className={`${styles.tabBtn} ${activeTab === "library" ? styles.tabBtnActive : ""}`}
+            onClick={() => setActiveTab("library")}
             style={{
-              borderColor: theme.borderSubtle,
-              color: theme.textPrimary,
-              background: theme.bgColor,
+              borderColor: activeTab === "library" ? theme.accentColor : theme.borderSubtle,
+              color: activeTab === "library" ? theme.accentColor : theme.textMuted,
+              background: activeTab === "library" ? "rgba(255,255,255,0.08)" : "transparent",
             }}
-          />
-
-          <div
-            className={styles.categoryTabs}
-            role="tablist"
-            aria-label="Filter patterns by category"
           >
-            {CATEGORIES.map((cat) => {
-              const isSelected = selectedCategory === cat;
-              return (
-                <button
-                  key={cat}
-                  type="button"
-                  role="tab"
-                  aria-selected={isSelected}
-                  className={`${styles.categoryTab} ${isSelected ? styles.categoryTabActive : ""}`}
-                  onClick={() => setSelectedCategory(cat)}
-                  style={{
-                    borderColor: isSelected ? theme.accentColor : theme.borderSubtle,
-                    color: isSelected ? theme.accentColor : theme.textMuted,
-                    background: isSelected ? "rgba(255, 255, 255, 0.08)" : "transparent",
-                  }}
-                >
-                  {cat}
-                </button>
-              );
-            })}
-          </div>
+            Library
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={activeTab === "import"}
+            className={`${styles.tabBtn} ${activeTab === "import" ? styles.tabBtnActive : ""}`}
+            onClick={() => setActiveTab("import")}
+            style={{
+              borderColor: activeTab === "import" ? theme.accentColor : theme.borderSubtle,
+              color: activeTab === "import" ? theme.accentColor : theme.textMuted,
+              background: activeTab === "import" ? "rgba(255,255,255,0.08)" : "transparent",
+            }}
+          >
+            Import RLE
+          </button>
         </div>
 
-        <div className={styles.grid} role="listbox" aria-label="Available patterns">
-          {filteredPatterns.length === 0 ? (
-            <div className={styles.emptyState} style={{ color: theme.textMuted }}>
-              No patterns found matching &quot;{searchQuery}&quot;
-            </div>
-          ) : (
-            filteredPatterns.map((p) => (
-              <div
-                key={p.name}
-                role="option"
-                aria-selected={false}
-                tabIndex={0}
-                className={styles.card}
-                onClick={() => {
-                  onSelectPattern(p);
-                  onClose();
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    onSelectPattern(p);
-                    onClose();
-                  }
-                }}
+        {activeTab === "library" && (
+          <>
+            <div className={styles.filterSection}>
+              <input
+                type="search"
+                className={styles.searchInput}
+                placeholder="Search patterns..."
+                aria-label="Search pattern presets"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
                 style={{
                   borderColor: theme.borderSubtle,
+                  color: theme.textPrimary,
+                  background: theme.bgColor,
                 }}
+              />
+
+              <div
+                className={styles.categoryTabs}
+                role="tablist"
+                aria-label="Filter patterns by category"
               >
-                <div className={styles.cardLeft}>
-                  <PatternPreview pattern={p} color={theme.cellColor} />
-                </div>
-                <div className={styles.cardRight}>
-                  <div className={styles.cardHeader}>
-                    <span className={styles.patternName} style={{ color: theme.textPrimary }}>
-                      {p.name.toUpperCase()}
-                    </span>
-                    <span
-                      className={styles.categoryBadge}
+                {CATEGORIES.map((cat) => {
+                  const isSelected = selectedCategory === cat;
+                  return (
+                    <button
+                      key={cat}
+                      type="button"
+                      role="tab"
+                      aria-selected={isSelected}
+                      className={`${styles.categoryTab} ${isSelected ? styles.categoryTabActive : ""}`}
+                      onClick={() => setSelectedCategory(cat)}
                       style={{
-                        color: theme.accentColor,
-                        borderColor: theme.borderSubtle,
+                        borderColor: isSelected ? theme.accentColor : theme.borderSubtle,
+                        color: isSelected ? theme.accentColor : theme.textMuted,
+                        background: isSelected ? "rgba(255, 255, 255, 0.08)" : "transparent",
                       }}
                     >
-                      {p.category.toUpperCase()}
-                    </span>
-                  </div>
-                  <p className={styles.cardDesc} style={{ color: theme.textMuted }}>
-                    {p.description}
-                  </p>
-                </div>
+                      {cat}
+                    </button>
+                  );
+                })}
               </div>
-            ))
-          )}
-        </div>
+            </div>
+
+            <div className={styles.grid} role="listbox" aria-label="Available patterns">
+              {filteredPatterns.length === 0 ? (
+                <div className={styles.emptyState} style={{ color: theme.textMuted }}>
+                  No patterns found matching &quot;{searchQuery}&quot;
+                </div>
+              ) : (
+                filteredPatterns.map((p) => (
+                  <div
+                    key={p.name}
+                    role="option"
+                    aria-selected={false}
+                    tabIndex={0}
+                    className={styles.card}
+                    onClick={() => {
+                      onSelectPattern(p);
+                      onClose();
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        onSelectPattern(p);
+                        onClose();
+                      }
+                    }}
+                    style={{
+                      borderColor: theme.borderSubtle,
+                    }}
+                  >
+                    <div className={styles.cardLeft}>
+                      <PatternPreview pattern={p} color={theme.cellColor} />
+                    </div>
+                    <div className={styles.cardRight}>
+                      <div className={styles.cardHeader}>
+                        <span className={styles.patternName} style={{ color: theme.textPrimary }}>
+                          {p.name.toUpperCase()}
+                        </span>
+                        <span
+                          className={styles.categoryBadge}
+                          style={{
+                            color: theme.accentColor,
+                            borderColor: theme.borderSubtle,
+                          }}
+                        >
+                          {p.category.toUpperCase()}
+                        </span>
+                      </div>
+                      <p className={styles.cardDesc} style={{ color: theme.textMuted }}>
+                        {p.description}
+                      </p>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </>
+        )}
+
+        {activeTab === "import" && (
+          <PatternImport theme={theme} onSelectPattern={onSelectPattern} onClose={onClose} />
+        )}
       </div>
     </div>
   );

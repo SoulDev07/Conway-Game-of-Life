@@ -66,9 +66,35 @@
 
 .subtitle {
   font-size: 0.88rem;
-  margin-bottom: 0.75rem;
+  margin-bottom: 0.5rem;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   opacity: 0.8;
+}
+
+.tabBar {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 0.85rem;
+}
+
+.tabBtn {
+  padding: 5px 14px;
+  border-radius: 3px;
+  border: 1px solid;
+  font-family: var(--font-pixel), monospace;
+  font-size: 0.82rem;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+.tabBtn:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.tabBtnActive {
+  font-weight: 700;
 }
 
 .filterSection {
