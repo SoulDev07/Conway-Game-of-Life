@@ -1,9 +1,19 @@
 import type { GameBoardState } from "@/types";
 
-export function createEmptyBoard(rows: number, cols: number): GameBoardState {
+export function createEmptyBoard(
+  rows: number,
+  cols: number,
+  customCells?: Uint8Array,
+  customAges?: Uint16Array,
+): GameBoardState {
+  const size = rows * cols;
+  const cells = customCells && customCells.length === size ? customCells : new Uint8Array(size);
+  const ages = customAges && customAges.length === size ? customAges : new Uint16Array(size);
+  cells.fill(0);
+  ages.fill(0);
   return {
-    cells: new Uint8Array(rows * cols),
-    ages: new Uint16Array(rows * cols),
+    cells,
+    ages,
     rows,
     cols,
     generation: 0,
@@ -11,10 +21,16 @@ export function createEmptyBoard(rows: number, cols: number): GameBoardState {
   };
 }
 
-export function createRandomBoard(rows: number, cols: number, density: number): GameBoardState {
+export function createRandomBoard(
+  rows: number,
+  cols: number,
+  density: number,
+  customCells?: Uint8Array,
+  customAges?: Uint16Array,
+): GameBoardState {
   const size = rows * cols;
-  const cells = new Uint8Array(size);
-  const ages = new Uint16Array(size);
+  const cells = customCells && customCells.length === size ? customCells : new Uint8Array(size);
+  const ages = customAges && customAges.length === size ? customAges : new Uint16Array(size);
   let aliveCount = 0;
 
   for (let i = 0; i < size; i++) {
@@ -22,6 +38,9 @@ export function createRandomBoard(rows: number, cols: number, density: number): 
       cells[i] = 1;
       ages[i] = 1;
       aliveCount++;
+    } else {
+      cells[i] = 0;
+      ages[i] = 0;
     }
   }
 
@@ -35,11 +54,15 @@ export function createRandomBoard(rows: number, cols: number, density: number): 
   };
 }
 
-export function stepSimulation(current: GameBoardState): GameBoardState {
+export function stepSimulation(
+  current: GameBoardState,
+  targetCells?: Uint8Array,
+  targetAges?: Uint16Array,
+): GameBoardState {
   const { cells, ages, rows, cols, generation } = current;
   const size = rows * cols;
-  const nextCells = new Uint8Array(size);
-  const nextAges = new Uint16Array(size);
+  const nextCells = targetCells && targetCells.length === size ? targetCells : new Uint8Array(size);
+  const nextAges = targetAges && targetAges.length === size ? targetAges : new Uint16Array(size);
   let nextAliveCount = 0;
 
   for (let r = 0; r < rows; r++) {
@@ -72,6 +95,9 @@ export function stepSimulation(current: GameBoardState): GameBoardState {
         nextCells[idx] = 1;
         nextAges[idx] = 1;
         nextAliveCount++;
+      } else {
+        nextCells[idx] = 0;
+        nextAges[idx] = 0;
       }
     }
   }
@@ -90,9 +116,16 @@ export function resizeBoard(
   oldBoard: GameBoardState,
   newRows: number,
   newCols: number,
+  targetCells?: Uint8Array,
+  targetAges?: Uint16Array,
 ): GameBoardState {
-  const newCells = new Uint8Array(newRows * newCols);
-  const newAges = new Uint16Array(newRows * newCols);
+  const newSize = newRows * newCols;
+  const newCells =
+    targetCells && targetCells.length === newSize ? targetCells : new Uint8Array(newSize);
+  const newAges =
+    targetAges && targetAges.length === newSize ? targetAges : new Uint16Array(newSize);
+  newCells.fill(0);
+  newAges.fill(0);
   let aliveCount = 0;
 
   const minRows = Math.min(oldBoard.rows, newRows);

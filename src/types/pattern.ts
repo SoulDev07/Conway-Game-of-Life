@@ -1,3 +1,5 @@
+import type { CellCoordinate } from "./game";
+
 export type PatternCategory = "Spaceship" | "Oscillator" | "Gun" | "Methuselah" | "Still Life";
 
 export interface PresetPattern {
@@ -5,5 +7,5 @@ export interface PresetPattern {
   category: PatternCategory;
   description: string;
   rle: string;
-  grid: number[][];
+  grid: CellCoordinate[];
 }

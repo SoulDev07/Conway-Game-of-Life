@@ -1,7 +1,7 @@
 "use client";
 
 import type React from "react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   BACKGROUND_KEYS,
   BACKGROUND_OPTIONS,
@@ -11,6 +11,7 @@ import {
 } from "@/constants";
 import type { BackgroundKey, Theme, ThemeKey } from "@/types";
 import styles from "./Controls.module.css";
+import { DropdownMenu, type DropdownOption } from "./DropdownMenu";
 
 interface ControlsProps {
   running: boolean;
@@ -57,23 +58,41 @@ export const Controls: React.FC<ControlsProps> = ({
   theme,
   isStamping,
 }) => {
-  const [themeMenuOpen, setThemeMenuOpen] = useState(false);
-  const [bgMenuOpen, setBgMenuOpen] = useState(false);
+  const [openMenu, setOpenMenu] = useState<"theme" | "bg" | null>(null);
 
   const handleGlobalKeyDown = useCallback(
     (e: KeyboardEvent) => {
-      if (e.key === "Escape" && (themeMenuOpen || bgMenuOpen)) {
-        setThemeMenuOpen(false);
-        setBgMenuOpen(false);
+      if (e.key === "Escape" && openMenu !== null) {
+        setOpenMenu(null);
       }
     },
-    [themeMenuOpen, bgMenuOpen],
+    [openMenu],
   );
 
   useEffect(() => {
     window.addEventListener("keydown", handleGlobalKeyDown);
     return () => window.removeEventListener("keydown", handleGlobalKeyDown);
   }, [handleGlobalKeyDown]);
+
+  const themeOptions = useMemo<DropdownOption<ThemeKey>[]>(
+    () =>
+      THEME_KEYS.map((key) => ({
+        key,
+        label: THEMES[key].name,
+        dotColor: THEMES[key].accentColor,
+      })),
+    [],
+  );
+
+  const bgOptions = useMemo<DropdownOption<BackgroundKey>[]>(
+    () =>
+      BACKGROUND_KEYS.map((key) => ({
+        key,
+        label: BACKGROUND_OPTIONS[key].name,
+        dotColor: BACKGROUND_OPTIONS[key].color,
+      })),
+    [],
+  );
 
   return (
     <div
@@ -145,7 +164,10 @@ export const Controls: React.FC<ControlsProps> = ({
         <button
           type="button"
           className={`${styles.btn} ${isStamping ? styles.activeToggle : ""}`}
-          onClick={onOpenPresets}
+          onClick={() => {
+            setOpenMenu(null);
+            onOpenPresets();
+          }}
           aria-haspopup="dialog"
           aria-pressed={isStamping}
           style={{
@@ -196,145 +218,30 @@ export const Controls: React.FC<ControlsProps> = ({
           {glowMode ? "Glow: ON" : "Glow"}
         </button>
 
-        <div className={styles.dropdownWrap}>
-          <button
-            type="button"
-            className={styles.btn}
-            onClick={() => {
-              setThemeMenuOpen(!themeMenuOpen);
-              setBgMenuOpen(false);
-            }}
-            style={{
-              borderColor: theme.borderSubtle,
-              color: theme.accentColor,
-            }}
-            aria-label="Select color theme"
-            aria-haspopup="listbox"
-            aria-expanded={themeMenuOpen}
-            aria-controls="theme-menu-listbox"
-          >
-            {theme.name} ▾
-          </button>
+        <DropdownMenu
+          id="theme-menu-listbox"
+          label={theme.name}
+          value={currentThemeKey}
+          options={themeOptions}
+          isOpen={openMenu === "theme"}
+          onToggle={() => setOpenMenu((prev) => (prev === "theme" ? null : "theme"))}
+          onClose={() => setOpenMenu(null)}
+          onSelect={onSelectTheme}
+          theme={theme}
+          textColor={theme.accentColor}
+        />
 
-          {themeMenuOpen && (
-            <>
-              <div
-                className={styles.backdrop}
-                onClick={() => setThemeMenuOpen(false)}
-                aria-hidden="true"
-              />
-              <div
-                id="theme-menu-listbox"
-                className={styles.menu}
-                role="listbox"
-                aria-label="Color theme options"
-                style={{
-                  background: theme.bgSecondary,
-                  borderColor: theme.borderSubtle,
-                }}
-              >
-                {THEME_KEYS.map((key) => {
-                  const t = THEMES[key];
-                  const isSelected = key === currentThemeKey;
-                  return (
-                    <button
-                      key={key}
-                      type="button"
-                      role="option"
-                      aria-selected={isSelected}
-                      className={styles.menuOption}
-                      onClick={() => {
-                        onSelectTheme(key);
-                        setThemeMenuOpen(false);
-                      }}
-                      style={{
-                        color: isSelected ? t.accentColor : theme.textPrimary,
-                        fontWeight: isSelected ? 700 : 400,
-                      }}
-                    >
-                      <span
-                        className={styles.themePreviewDot}
-                        style={{ background: t.accentColor }}
-                        aria-hidden="true"
-                      />
-                      {t.name}
-                    </button>
-                  );
-                })}
-              </div>
-            </>
-          )}
-        </div>
-
-        <div className={styles.dropdownWrap}>
-          <button
-            type="button"
-            className={styles.btn}
-            onClick={() => {
-              setBgMenuOpen(!bgMenuOpen);
-              setThemeMenuOpen(false);
-            }}
-            style={{
-              borderColor: theme.borderSubtle,
-              color: theme.textPrimary,
-            }}
-            aria-label="Select background color"
-            aria-haspopup="listbox"
-            aria-expanded={bgMenuOpen}
-            aria-controls="bg-menu-listbox"
-          >
-            BG: {BACKGROUND_OPTIONS[currentBgKey].name} ▾
-          </button>
-
-          {bgMenuOpen && (
-            <>
-              <div
-                className={styles.backdrop}
-                onClick={() => setBgMenuOpen(false)}
-                aria-hidden="true"
-              />
-              <div
-                id="bg-menu-listbox"
-                className={styles.menu}
-                role="listbox"
-                aria-label="Background color options"
-                style={{
-                  background: theme.bgSecondary,
-                  borderColor: theme.borderSubtle,
-                }}
-              >
-                {BACKGROUND_KEYS.map((key) => {
-                  const bg = BACKGROUND_OPTIONS[key];
-                  const isSelected = key === currentBgKey;
-                  return (
-                    <button
-                      key={key}
-                      type="button"
-                      role="option"
-                      aria-selected={isSelected}
-                      className={styles.menuOption}
-                      onClick={() => {
-                        onSelectBg(key);
-                        setBgMenuOpen(false);
-                      }}
-                      style={{
-                        color: isSelected ? theme.accentColor : theme.textPrimary,
-                        fontWeight: isSelected ? 700 : 400,
-                      }}
-                    >
-                      <span
-                        className={styles.bgPreviewDot}
-                        style={{ background: bg.color }}
-                        aria-hidden="true"
-                      />
-                      {bg.name}
-                    </button>
-                  );
-                })}
-              </div>
-            </>
-          )}
-        </div>
+        <DropdownMenu
+          id="bg-menu-listbox"
+          label={`BG: ${BACKGROUND_OPTIONS[currentBgKey].name}`}
+          value={currentBgKey}
+          options={bgOptions}
+          isOpen={openMenu === "bg"}
+          onToggle={() => setOpenMenu((prev) => (prev === "bg" ? null : "bg"))}
+          onClose={() => setOpenMenu(null)}
+          onSelect={onSelectBg}
+          theme={theme}
+        />
 
         <div className={styles.speedWrap}>
           <select

@@ -3,6 +3,7 @@
 import type React from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { PATTERN_PRESETS } from "@/constants";
+import { getPatternBounds } from "@/lib";
 import type { PatternCategory, PresetPattern, Theme } from "@/types";
 import { PatternImport } from "./PatternImport";
 import styles from "./PatternPicker.module.css";
@@ -28,20 +29,7 @@ const PatternPreview: React.FC<{ pattern: PresetPattern; color: string }> = ({
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    let minR = Number.POSITIVE_INFINITY;
-    let maxR = Number.NEGATIVE_INFINITY;
-    let minC = Number.POSITIVE_INFINITY;
-    let maxC = Number.NEGATIVE_INFINITY;
-
-    for (const [r, c] of pattern.grid) {
-      if (r < minR) minR = r;
-      if (r > maxR) maxR = r;
-      if (c < minC) minC = c;
-      if (c > maxC) maxC = c;
-    }
-
-    const pRows = maxR - minR + 1;
-    const pCols = maxC - minC + 1;
+    const { minR, minC, width: pCols, height: pRows } = getPatternBounds(pattern);
 
     const width = canvas.width;
     const height = canvas.height;

@@ -7,8 +7,7 @@ import {
   stampPattern,
   stepSimulation,
 } from "@/lib";
-import type { GameBoardState, PresetPattern } from "@/types";
-import type { WorkerInMessage, WorkerOutMessage } from "@/workers/simulation.worker";
+import type { GameBoardState, PresetPattern, WorkerInMessage, WorkerOutMessage } from "@/types";
 
 export function useGameSimulation(initialRows: number, initialCols: number) {
   const [board, setBoard] = useState<GameBoardState>(() =>
@@ -19,7 +18,7 @@ export function useGameSimulation(initialRows: number, initialCols: number) {
   const [speed, setSpeed] = useState(500);
 
   const workerRef = useRef<Worker | null>(null);
-  const isWorkerReady = useRef(false);
+  const fallbackBackBuffer = useRef<{ cells: Uint8Array; ages: Uint16Array } | null>(null);
 
   useEffect(() => {
     if (typeof window === "undefined" || typeof Worker === "undefined") return;
@@ -36,7 +35,6 @@ export function useGameSimulation(initialRows: number, initialCols: number) {
       };
 
       workerRef.current = worker;
-      isWorkerReady.current = true;
 
       const initMsg: WorkerInMessage = {
         type: "init",
@@ -49,11 +47,9 @@ export function useGameSimulation(initialRows: number, initialCols: number) {
       return () => {
         worker.terminate();
         workerRef.current = null;
-        isWorkerReady.current = false;
       };
     } catch {
       workerRef.current = null;
-      isWorkerReady.current = false;
     }
   }, [initialRows, initialCols]);
 
@@ -72,8 +68,22 @@ export function useGameSimulation(initialRows: number, initialCols: number) {
       if (accumulator >= speed) {
         setBoard((prev) => {
           let nextBoard = prev;
+          const size = prev.rows * prev.cols;
+          if (!fallbackBackBuffer.current || fallbackBackBuffer.current.cells.length !== size) {
+            fallbackBackBuffer.current = {
+              cells: new Uint8Array(size),
+              ages: new Uint16Array(size),
+            };
+          }
+
           while (accumulator >= speed) {
-            nextBoard = stepSimulation(nextBoard);
+            const back = fallbackBackBuffer.current;
+            const stepped = stepSimulation(nextBoard, back.cells, back.ages);
+            fallbackBackBuffer.current = {
+              cells: nextBoard.cells,
+              ages: nextBoard.ages,
+            };
+            nextBoard = stepped;
             accumulator -= speed;
           }
           return nextBoard;

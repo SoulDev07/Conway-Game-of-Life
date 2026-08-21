@@ -32,9 +32,10 @@ export function stampPattern(
   startRow: number,
   startCol: number,
   centered = true,
+  inPlace = false,
 ): GameBoardState {
-  const cells = new Uint8Array(board.cells);
-  const ages = new Uint16Array(board.ages);
+  const cells = inPlace ? board.cells : new Uint8Array(board.cells);
+  const ages = inPlace ? board.ages : new Uint16Array(board.ages);
   let aliveCount = board.aliveCount;
 
   let offsetR = startRow;

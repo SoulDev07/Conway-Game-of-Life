@@ -1,80 +1,110 @@
 import {
-  createEmptyBoard,
   createRandomBoard,
   injectRandomEdgePattern,
   resizeBoard,
   stampPattern,
   stepSimulation,
 } from "@/lib";
-import type { GameBoardState, PresetPattern } from "@/types";
+import type { GameBoardState, WorkerInMessage } from "@/types";
 
-export type WorkerInMessage =
-  | { type: "init"; rows: number; cols: number; speed: number }
-  | { type: "start" }
-  | { type: "stop" }
-  | { type: "step" }
-  | { type: "setSpeed"; speed: number }
-  | { type: "setIdle"; idle: boolean }
-  | { type: "clear" }
-  | { type: "randomize"; density?: number }
-  | { type: "toggleCell"; row: number; col: number; targetState: boolean }
-  | { type: "stamp"; pattern: PresetPattern; row: number; col: number }
-  | { type: "resize"; rows: number; cols: number };
+let rows = 16;
+let cols = 32;
+let generation = 0;
+let aliveCount = 0;
 
-export type WorkerOutMessage = {
-  type: "tick";
-  board: {
-    cells: Uint8Array;
-    ages: Uint16Array;
-    rows: number;
-    cols: number;
-    generation: number;
-    aliveCount: number;
-  };
-};
+let frontCells: Uint8Array = new Uint8Array(rows * cols);
+let frontAges: Uint16Array = new Uint16Array(rows * cols);
+let backCells: Uint8Array = new Uint8Array(rows * cols);
+let backAges: Uint16Array = new Uint16Array(rows * cols);
 
-let board: GameBoardState = createEmptyBoard(16, 32);
 let running = false;
 let idleRunning = false;
 let speed = 500;
 let timerId: ReturnType<typeof setTimeout> | null = null;
 let idleTimerId: ReturnType<typeof setTimeout> | null = null;
 
+function setupBuffers(newRows: number, newCols: number) {
+  rows = newRows;
+  cols = newCols;
+  const size = rows * cols;
+  frontCells = new Uint8Array(size);
+  frontAges = new Uint16Array(size);
+  backCells = new Uint8Array(size);
+  backAges = new Uint16Array(size);
+}
+
 function postBoardUpdate() {
   self.postMessage({
     type: "tick",
     board: {
-      cells: board.cells,
-      ages: board.ages,
-      rows: board.rows,
-      cols: board.cols,
-      generation: board.generation,
-      aliveCount: board.aliveCount,
+      cells: frontCells,
+      ages: frontAges,
+      rows,
+      cols,
+      generation,
+      aliveCount,
     },
   });
 }
 
+function advanceStep() {
+  const nextState = stepSimulation(
+    {
+      cells: frontCells,
+      ages: frontAges,
+      rows,
+      cols,
+      generation,
+      aliveCount,
+    },
+    backCells,
+    backAges,
+  );
+
+  generation = nextState.generation;
+  aliveCount = nextState.aliveCount;
+
+  const tempCells = frontCells;
+  const tempAges = frontAges;
+  frontCells = backCells;
+  frontAges = backAges;
+  backCells = tempCells;
+  backAges = tempAges;
+}
+
 function runLoop() {
   if (!running) return;
-  board = stepSimulation(board);
+  advanceStep();
   postBoardUpdate();
   timerId = setTimeout(runLoop, speed);
 }
 
 function runIdleLoop() {
   if (!idleRunning) return;
-  board = injectRandomEdgePattern(board);
+  const state: GameBoardState = {
+    cells: frontCells,
+    ages: frontAges,
+    rows,
+    cols,
+    generation,
+    aliveCount,
+  };
+  const next = injectRandomEdgePattern(state);
+  frontCells.set(next.cells);
+  frontAges.set(next.ages);
+  aliveCount = next.aliveCount;
   postBoardUpdate();
-  const idleInterval = Math.max(1000, speed * 2);
-  idleTimerId = setTimeout(runIdleLoop, idleInterval);
+  idleTimerId = setTimeout(runIdleLoop, Math.max(1000, speed * 2));
 }
 
 self.onmessage = (e: MessageEvent<WorkerInMessage>) => {
   const msg = e.data;
   switch (msg.type) {
     case "init":
-      board = createEmptyBoard(msg.rows, msg.cols);
+      setupBuffers(msg.rows, msg.cols);
       speed = msg.speed;
+      generation = 0;
+      aliveCount = 0;
       postBoardUpdate();
       break;
 
@@ -94,7 +124,7 @@ self.onmessage = (e: MessageEvent<WorkerInMessage>) => {
       break;
 
     case "step":
-      board = stepSimulation(board);
+      advanceStep();
       postBoardUpdate();
       break;
 
@@ -119,54 +149,73 @@ self.onmessage = (e: MessageEvent<WorkerInMessage>) => {
       }
       break;
 
-    case "clear":
+    case "clear": {
       running = false;
       if (timerId !== null) {
         clearTimeout(timerId);
         timerId = null;
       }
-      board = createEmptyBoard(board.rows, board.cols);
+      frontCells.fill(0);
+      frontAges.fill(0);
+      backCells.fill(0);
+      backAges.fill(0);
+      generation = 0;
+      aliveCount = 0;
       postBoardUpdate();
       break;
+    }
 
-    case "randomize":
-      board = createRandomBoard(board.rows, board.cols, msg.density ?? 0.2);
+    case "randomize": {
+      const state = createRandomBoard(rows, cols, msg.density, frontCells, frontAges);
+      generation = 0;
+      aliveCount = state.aliveCount;
       postBoardUpdate();
       break;
+    }
 
     case "toggleCell": {
-      const idx = msg.row * board.cols + msg.col;
-      if (idx >= 0 && idx < board.cells.length) {
-        const currentState = board.cells[idx] === 1;
+      const idx = msg.row * cols + msg.col;
+      if (idx >= 0 && idx < frontCells.length) {
+        const currentState = frontCells[idx] === 1;
         if (currentState !== msg.targetState) {
-          const nextCells = new Uint8Array(board.cells);
-          const nextAges = new Uint16Array(board.ages);
-          nextCells[idx] = msg.targetState ? 1 : 0;
-          nextAges[idx] = msg.targetState ? 1 : 0;
-          const nextAliveCount = board.aliveCount + (msg.targetState ? 1 : -1);
-          board = {
-            ...board,
-            cells: nextCells,
-            ages: nextAges,
-            aliveCount: Math.max(0, nextAliveCount),
-          };
+          frontCells[idx] = msg.targetState ? 1 : 0;
+          frontAges[idx] = msg.targetState ? 1 : 0;
+          aliveCount = Math.max(0, aliveCount + (msg.targetState ? 1 : -1));
           postBoardUpdate();
         }
       }
       break;
     }
 
-    case "stamp":
-      board = stampPattern(board, msg.pattern, msg.row, msg.col);
+    case "stamp": {
+      const state: GameBoardState = {
+        cells: frontCells,
+        ages: frontAges,
+        rows,
+        cols,
+        generation,
+        aliveCount,
+      };
+      const stamped = stampPattern(state, msg.pattern, msg.row, msg.col, true, true);
+      aliveCount = stamped.aliveCount;
       postBoardUpdate();
       break;
+    }
 
     case "resize":
-      if (board.rows !== msg.rows || board.cols !== msg.cols) {
-        board =
-          board.rows === 0 || board.cols === 0
-            ? createEmptyBoard(msg.rows, msg.cols)
-            : resizeBoard(board, msg.rows, msg.cols);
+      if (rows !== msg.rows || cols !== msg.cols) {
+        const oldState: GameBoardState = {
+          cells: new Uint8Array(frontCells),
+          ages: new Uint16Array(frontAges),
+          rows,
+          cols,
+          generation,
+          aliveCount,
+        };
+        setupBuffers(msg.rows, msg.cols);
+        const resized = resizeBoard(oldState, msg.rows, msg.cols, frontCells, frontAges);
+        generation = resized.generation;
+        aliveCount = resized.aliveCount;
         postBoardUpdate();
       }
       break;

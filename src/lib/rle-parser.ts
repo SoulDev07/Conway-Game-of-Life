@@ -1,3 +1,5 @@
+import type { CellCoordinate } from "@/types";
+
 export class RLEParseError extends Error {
   constructor(message: string) {
     super(message);
@@ -6,7 +8,7 @@ export class RLEParseError extends Error {
 }
 
 export interface RLEParseResult {
-  grid: number[][];
+  grid: CellCoordinate[];
   name: string;
   description: string;
   width: number;
@@ -70,7 +72,7 @@ export function parseRLE(src: string): RLEParseResult {
   const exclamation = body.indexOf("!");
   const rleData = exclamation >= 0 ? body.slice(0, exclamation) : body;
 
-  const grid: number[][] = [];
+  const grid: CellCoordinate[] = [];
   let row = 0;
   let col = 0;
   let countStr = "";
@@ -151,7 +153,7 @@ export function parsePlaintext(src: string): RLEParseResult {
     throw new RLEParseError("No cell data found in plaintext pattern.");
   }
 
-  const grid: number[][] = [];
+  const grid: CellCoordinate[] = [];
   let width = 0;
 
   for (let r = 0; r < dataLines.length; r++) {

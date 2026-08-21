@@ -2,8 +2,8 @@
 
 import type React from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { getPatternBounds } from "@/lib";
-import type { GameBoardState, PresetPattern, Theme } from "@/types";
+import { computeCellMetrics, getPatternBounds } from "@/lib";
+import type { CellCoordinate, GameBoardState, PresetPattern, Theme } from "@/types";
 import styles from "./LifeCanvas.module.css";
 
 interface LifeCanvasProps {
@@ -43,24 +43,10 @@ export const LifeCanvas: React.FC<LifeCanvasProps> = ({
   const onResizeRef = useRef(onResize);
   onResizeRef.current = onResize;
 
-  const calculateCellMetrics = useCallback((w: number, h: number, bCols: number, bRows: number) => {
-    if (w === 0 || h === 0 || bCols === 0 || bRows === 0) {
-      return { cellSize: 24, offsetX: 0, offsetY: 0, width: w, height: h };
-    }
-    const isMobile = w < 640;
-    const cellSize = isMobile
-      ? Math.max(18, Math.min(28, Math.floor(w / 20)))
-      : Math.max(16, Math.min(36, Math.floor(w * 0.025)));
-
-    const offsetX = Math.floor((w - cellSize * bCols) / 2);
-    const offsetY = Math.floor((h - cellSize * bRows) / 2);
-    return { cellSize, offsetX, offsetY, width: w, height: h };
-  }, []);
-
-  const getCellMetrics = useCallback(() => {
+  const getMetrics = useCallback(() => {
     const { width, height } = dimensionsRef.current;
-    return calculateCellMetrics(width, height, board.cols, board.rows);
-  }, [board.cols, board.rows, calculateCellMetrics]);
+    return computeCellMetrics(width, height, board.cols, board.rows);
+  }, [board.cols, board.rows]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -91,10 +77,7 @@ export const LifeCanvas: React.FC<LifeCanvasProps> = ({
       onResizeRef.current(rows, cols);
     };
 
-    const observer = new ResizeObserver(() => {
-      updateDimensions();
-    });
-
+    const observer = new ResizeObserver(updateDimensions);
     observer.observe(container);
     window.addEventListener("resize", updateDimensions);
     window.addEventListener("orientationchange", updateDimensions);
@@ -118,14 +101,13 @@ export const LifeCanvas: React.FC<LifeCanvasProps> = ({
     ctx.save();
     ctx.scale(dpr, dpr);
 
-    const { cellSize, offsetX, offsetY } = getCellMetrics();
+    const { cellSize, offsetX, offsetY } = getMetrics();
 
     ctx.fillStyle = bgColor;
     ctx.fillRect(0, 0, width, height);
 
     const radius = Math.min(6, cellSize * 0.15);
 
-    // Render live cells
     if (board.aliveCount > 0) {
       const { cells, rows, cols } = board;
 
@@ -198,7 +180,7 @@ export const LifeCanvas: React.FC<LifeCanvasProps> = ({
         ctx.fillStyle = theme.accentColor;
         ctx.globalAlpha = 0.45;
 
-        for (const [dr, dc] of selectedPattern.grid) {
+        for (const [dr, dc] of selectedPattern.grid as CellCoordinate[]) {
           const r = (startR + dr + board.rows * 100) % board.rows;
           const c = (startC + dc + board.cols * 100) % board.cols;
           const x = offsetX + c * cellSize;
@@ -227,14 +209,14 @@ export const LifeCanvas: React.FC<LifeCanvasProps> = ({
     }
 
     ctx.restore();
-  }, [board, theme, bgColor, glowMode, hoveredCell, isStamping, selectedPattern, getCellMetrics]);
+  }, [board, theme, bgColor, glowMode, hoveredCell, isStamping, selectedPattern, getMetrics]);
 
   const getCellFromEvent = useCallback(
     (clientX: number, clientY: number) => {
       const canvas = canvasRef.current;
       if (!canvas) return null;
       const rect = canvas.getBoundingClientRect();
-      const { cellSize, offsetX, offsetY } = getCellMetrics();
+      const { cellSize, offsetX, offsetY } = getMetrics();
 
       const x = clientX - rect.left - offsetX;
       const y = clientY - rect.top - offsetY;
@@ -248,7 +230,7 @@ export const LifeCanvas: React.FC<LifeCanvasProps> = ({
       }
       return null;
     },
-    [board.rows, board.cols, getCellMetrics],
+    [board.rows, board.cols, getMetrics],
   );
 
   const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
