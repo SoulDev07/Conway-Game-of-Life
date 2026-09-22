@@ -10,9 +10,9 @@
 
 Implementation of the famous cellular automaton devised by mathematician John Conway in 1970.
 
-<div align="center">
-  <video controls src="assets/Conway-Game-of-Life-Demo.mp4" alt="Conway Game of Life preview" width="800" />
-</div>
+<p align="center">
+  <img src="assets/Conway-Game-of-Life-Demo.gif" alt="Conway's Game of Life Demo">
+</p>
 
 ## Features
 
