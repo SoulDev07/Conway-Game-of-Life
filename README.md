@@ -1,66 +1,87 @@
-# Conway Game of Life
+# Conway's Game of Life
 
-This project is an implementation of the famous cellular automaton devised by mathematician John Conway. The game is built with React 19 and Next.js 16.
+<p align="center">
+  <a href="https://nextjs.org/"><img src="https://img.shields.io/badge/Next.js_16-000000?style=flat&logo=nextdotjs&logoColor=white" alt="Next.js 16" /></a>
+  <a href="https://react.dev/"><img src="https://img.shields.io/badge/React_19-20232A?style=flat&logo=react&logoColor=61DAFB" alt="React 19" /></a>
+  <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-3178C6?style=flat&logo=typescript&logoColor=white" alt="TypeScript" /></a>
+  <a href="https://tailwindcss.com/"><img src="https://img.shields.io/badge/Tailwind_CSS-06B6D4?style=flat&logo=tailwindcss&logoColor=white" alt="Tailwind CSS" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg?style=flat" alt="License MIT" /></a>
+</p>
 
-- Experience the classic Conway Game of Life on your web browser.
-- Watch as cells evolve based on simple rules and create mesmerizing patterns.
+Implementation of the famous cellular automaton devised by mathematician John Conway in 1970.
 
-
-![Conway Game of Life Website Video](assets/Conway-Game-of-Life-Demo.gif)
-
-[Conway Game of Life Demo](https://SoulDev07.github.io/Conway-Game-of-Life)
+<div align="center">
+  <video controls src="assets/Conway-Game-of-Life-Demo.mp4" alt="Conway Game of Life preview" width="800" />
+</div>
 
 ## Features
 
-- **Start Button:** Initiate or resume the simulation to observe the cells evolve over time.
-- **Reset Button:** Clear the board and start a new simulation.
-- **Idle Button:** Turn on automatic simulation mode and see the simulation unfold itself.
+- **Web worker simulation.** Grid calculation and idle pattern generation run on a background worker thread.
+- **Preset library.** Includes 20 built-in patterns across spaceships, guns, oscillators, still lifes, and methuselahs.
+- **Pattern export & sharing.** Box-select any region or full board to export as standard `.rle` or `.cells` files, copy RLE snippets directly to your clipboard, or generate shareable URLs (`?rle=...&theme=...`).
+- **Custom pattern import.** Paste raw text or drop in `.rle` and `.cells` files from [LifeWiki](https://conwaylife.com/wiki/). The parser checks syntax and shows a preview before placing cells on the grid.
+- **Visual effects.** Toggleable cell glow, aging color shifts as cells survive generations, and a pixel cursor trail.
+- **Playback controls.** Step one generation at a time, pause, randomize, or run at speeds down to 40 ms per tick.
 
-### Rules
+## How the simulation works
 
-The Conway Game of Life follows a few simple rules:
+The grid wraps around toroidally at the edges. Every tick calculates the next state using Conway's four rules:
 
 1. **Underpopulation:** A live cell with fewer than two live neighbors dies.
-2. **Survival:** A live cell with two or three live neighbors survives.
+2. **Survival:** A live cell with two or three live neighbors lives on.
 3. **Overpopulation:** A live cell with more than three live neighbors dies.
 4. **Reproduction:** A dead cell with exactly three live neighbors becomes a live cell.
 
-## Getting Started
+---
 
-To run the Conway Game of Life on your local machine, follow these steps:
+## Running locally
 
-1. **Clone the Repository:**
+### Prerequisites
+
+- [Node.js](https://nodejs.org/) 20 or later
+- [pnpm](https://pnpm.io/installation)
+
+### Setup
+
+1. Clone the repository:
 
 ```bash
 git clone https://github.com/SoulDev07/Conway-Game-of-Life.git
 ```
 
-2. **Navigate to the Project Directory:**
+2. Navigate to the project directory:
 
 ```bash
 cd Conway-Game-of-Life
 ```
 
-3. **Install Dependencies:**
+3. Install dependencies:
 
 ```bash
-npm install
+pnpm install
 ```
 
-4. **Run the Application:**
+4. Start the development server:
 
 ```bash
-npm run dev
+pnpm dev
 ```
 
-5. **Open in Browser:**
+5. Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-   Visit http://localhost:3000 to interact with the Conway Game of Life.
+To create a production build:
 
-## Tech Stack
+```bash
+pnpm build
+```
 
-- React 19
-- Next.js 16
+To run the production server:
+
+```bash
+pnpm start
+```
+
+---
 
 ## License
 

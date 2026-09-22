@@ -3,13 +3,13 @@
 import type { Theme } from "@/types";
 import styles from "./Controls.module.css";
 
-export interface DropdownOption<T extends string> {
+export interface DropdownOption<T extends string | number> {
   key: T;
   label: string;
-  dotColor: string;
+  dotColor?: string;
 }
 
-interface DropdownMenuProps<T extends string> {
+interface DropdownMenuProps<T extends string | number> {
   id: string;
   label: string;
   value: T;
@@ -22,7 +22,7 @@ interface DropdownMenuProps<T extends string> {
   textColor?: string;
 }
 
-export function DropdownMenu<T extends string>({
+export function DropdownMenu<T extends string | number>({
   id,
   label,
   value,
@@ -83,11 +83,13 @@ export function DropdownMenu<T extends string>({
                     fontWeight: isSelected ? 700 : 400,
                   }}
                 >
-                  <span
-                    className={styles.themePreviewDot}
-                    style={{ background: opt.dotColor }}
-                    aria-hidden="true"
-                  />
+                  {opt.dotColor && (
+                    <span
+                      className={styles.themePreviewDot}
+                      style={{ background: opt.dotColor }}
+                      aria-hidden="true"
+                    />
+                  )}
                   {opt.label}
                 </button>
               );

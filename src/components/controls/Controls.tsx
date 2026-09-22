@@ -58,7 +58,7 @@ export const Controls: React.FC<ControlsProps> = ({
   theme,
   isStamping,
 }) => {
-  const [openMenu, setOpenMenu] = useState<"theme" | "bg" | null>(null);
+  const [openMenu, setOpenMenu] = useState<"theme" | "bg" | "speed" | null>(null);
 
   const handleGlobalKeyDown = useCallback(
     (e: KeyboardEvent) => {
@@ -93,6 +93,20 @@ export const Controls: React.FC<ControlsProps> = ({
       })),
     [],
   );
+
+  const speedOptions = useMemo<DropdownOption<number>[]>(
+    () =>
+      SPEED_PRESETS.map((p) => ({
+        key: p.ms,
+        label: p.label,
+      })),
+    [],
+  );
+
+  const currentSpeedLabel = useMemo(() => {
+    const currentPreset = SPEED_PRESETS.find((p) => p.ms === speed);
+    return currentPreset ? currentPreset.label : `${speed}ms`;
+  }, [speed]);
 
   return (
     <div
@@ -243,26 +257,17 @@ export const Controls: React.FC<ControlsProps> = ({
           theme={theme}
         />
 
-        <div className={styles.speedWrap}>
-          <select
-            id="speed-select"
-            aria-label="Simulation speed"
-            className={styles.select}
-            value={speed}
-            onChange={(e) => onChangeSpeed(Number(e.target.value))}
-            style={{
-              borderColor: theme.borderSubtle,
-              color: theme.textPrimary,
-              background: theme.bgSecondary,
-            }}
-          >
-            {SPEED_PRESETS.map((p) => (
-              <option key={p.ms} value={p.ms}>
-                {p.label}
-              </option>
-            ))}
-          </select>
-        </div>
+        <DropdownMenu
+          id="speed-menu-listbox"
+          label={currentSpeedLabel}
+          value={speed}
+          options={speedOptions}
+          isOpen={openMenu === "speed"}
+          onToggle={() => setOpenMenu((prev) => (prev === "speed" ? null : "speed"))}
+          onClose={() => setOpenMenu(null)}
+          onSelect={onChangeSpeed}
+          theme={theme}
+        />
       </div>
 
       <div
