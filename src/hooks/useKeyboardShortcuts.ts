@@ -7,20 +7,24 @@ export interface ShortcutHandlers {
   onRandom: () => void;
   onToggleGlow: () => void;
   onTogglePatterns: () => void;
+  onToggleSelect: () => void;
+  onOpenExport: () => void;
   onCancel: () => void;
   isRunning: boolean;
 }
 
-export function useKeyboardShortcuts({
+export const useKeyboardShortcuts = ({
   onTogglePlay,
   onStep,
   onClear,
   onRandom,
   onToggleGlow,
   onTogglePatterns,
+  onToggleSelect,
+  onOpenExport,
   onCancel,
   isRunning,
-}: ShortcutHandlers) {
+}: ShortcutHandlers): void => {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (
@@ -44,6 +48,10 @@ export function useKeyboardShortcuts({
         onToggleGlow();
       } else if (e.key === "p" || e.key === "P") {
         onTogglePatterns();
+      } else if (e.key === "b" || e.key === "B") {
+        onToggleSelect();
+      } else if (e.key === "e" || e.key === "E") {
+        onOpenExport();
       } else if (e.key === "Escape") {
         onCancel();
       }
@@ -58,7 +66,9 @@ export function useKeyboardShortcuts({
     onRandom,
     onToggleGlow,
     onTogglePatterns,
+    onToggleSelect,
+    onOpenExport,
     onCancel,
     isRunning,
   ]);
-}
+};

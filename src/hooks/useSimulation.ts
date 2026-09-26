@@ -1,23 +1,57 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  createEmptyBoard,
-  createRandomBoard,
+  createEmptyGrid,
+  createRandomGrid,
+  getRuleStrategy,
   injectRandomEdgePattern,
-  resizeBoard,
+  resizeGrid,
+  simulationEventBus,
   stampPattern,
   stepSimulation,
 } from "@/lib";
-import type { GameBoardState, PresetPattern, WorkerInMessage, WorkerOutMessage } from "@/types";
+import type {
+  PresetPattern,
+  RuleStrategy,
+  SimulationGridState,
+  WorkerInMessage,
+  WorkerOutMessage,
+} from "@/types";
 
-export function useGameSimulation(initialRows: number, initialCols: number) {
-  const [board, setBoard] = useState<GameBoardState>(() =>
-    createEmptyBoard(initialRows, initialCols),
+export interface UseSimulationReturn {
+  grid: SimulationGridState;
+  running: boolean;
+  idleRunning: boolean;
+  speed: number;
+  ruleId: string;
+  currentRule: RuleStrategy;
+  setRule: (newRuleId: string) => void;
+  toggleRunning: () => void;
+  toggleIdle: () => void;
+  step: () => void;
+  clear: () => void;
+  randomize: () => void;
+  setSpeed: (newSpeed: number) => void;
+  toggleCell: (row: number, col: number, targetState: boolean) => void;
+  stamp: (pattern: PresetPattern, row: number, col: number) => void;
+  loadPattern: (pattern: PresetPattern) => void;
+  resize: (newRows: number, newCols: number) => void;
+  wrapEdges: boolean;
+  toggleWrapEdges: () => void;
+}
+
+export const useSimulation = (initialRows: number, initialCols: number): UseSimulationReturn => {
+  const [grid, setGrid] = useState<SimulationGridState>(() =>
+    createEmptyGrid(initialRows, initialCols),
   );
   const [running, setRunning] = useState(false);
   const [idleRunning, setIdleRunning] = useState(false);
+  const [wrapEdges, setWrapEdges] = useState(true);
   const [speed, setSpeed] = useState(500);
+  const [ruleId, setRuleIdState] = useState("conway");
+  const currentRule = getRuleStrategy(ruleId);
 
   const workerRef = useRef<Worker | null>(null);
+  const pendingWorkerMessages = useRef<WorkerInMessage[]>([]);
   const fallbackBackBuffer = useRef<{ cells: Uint8Array; ages: Uint16Array } | null>(null);
 
   useEffect(() => {
@@ -30,7 +64,11 @@ export function useGameSimulation(initialRows: number, initialCols: number) {
 
       worker.onmessage = (e: MessageEvent<WorkerOutMessage>) => {
         if (e.data.type === "tick") {
-          setBoard(e.data.board);
+          setGrid(e.data.grid);
+          simulationEventBus.emit("tick", {
+            generation: e.data.grid.generation,
+            aliveCount: e.data.grid.aliveCount,
+          });
         }
       };
 
@@ -43,6 +81,11 @@ export function useGameSimulation(initialRows: number, initialCols: number) {
         speed: 500,
       };
       worker.postMessage(initMsg);
+
+      for (const msg of pendingWorkerMessages.current) {
+        worker.postMessage(msg);
+      }
+      pendingWorkerMessages.current = [];
 
       return () => {
         worker.terminate();
@@ -66,8 +109,8 @@ export function useGameSimulation(initialRows: number, initialCols: number) {
       accumulator += Math.min(delta, 1000);
 
       if (accumulator >= speed) {
-        setBoard((prev) => {
-          let nextBoard = prev;
+        setGrid((prev) => {
+          let nextGrid = prev;
           const size = prev.rows * prev.cols;
           if (!fallbackBackBuffer.current || fallbackBackBuffer.current.cells.length !== size) {
             fallbackBackBuffer.current = {
@@ -78,15 +121,15 @@ export function useGameSimulation(initialRows: number, initialCols: number) {
 
           while (accumulator >= speed) {
             const back = fallbackBackBuffer.current;
-            const stepped = stepSimulation(nextBoard, back.cells, back.ages);
+            const stepped = stepSimulation(nextGrid, back.cells, back.ages, currentRule);
             fallbackBackBuffer.current = {
-              cells: nextBoard.cells,
-              ages: nextBoard.ages,
+              cells: nextGrid.cells,
+              ages: nextGrid.ages,
             };
-            nextBoard = stepped;
+            nextGrid = stepped;
             accumulator -= speed;
           }
-          return nextBoard;
+          return nextGrid;
         });
       }
 
@@ -95,7 +138,7 @@ export function useGameSimulation(initialRows: number, initialCols: number) {
 
     animId = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(animId);
-  }, [running, speed]);
+  }, [running, speed, currentRule]);
 
   useEffect(() => {
     if (workerRef.current || !idleRunning) return;
@@ -111,7 +154,7 @@ export function useGameSimulation(initialRows: number, initialCols: number) {
       accumulator += Math.min(delta, 2000);
 
       if (accumulator >= idleInterval) {
-        setBoard((prev) => injectRandomEdgePattern(prev));
+        setGrid((prev) => injectRandomEdgePattern(prev));
         accumulator -= idleInterval;
       }
 
@@ -125,36 +168,47 @@ export function useGameSimulation(initialRows: number, initialCols: number) {
   const postWorker = useCallback((msg: WorkerInMessage) => {
     if (workerRef.current) {
       workerRef.current.postMessage(msg);
+    } else {
+      pendingWorkerMessages.current.push(msg);
     }
   }, []);
 
   const resize = useCallback(
     (newRows: number, newCols: number) => {
-      setBoard((prev) => {
+      setGrid((prev) => {
         if (prev.rows === newRows && prev.cols === newCols) return prev;
         const next =
           prev.rows === 0 || prev.cols === 0
-            ? createEmptyBoard(newRows, newCols)
-            : resizeBoard(prev, newRows, newCols);
+            ? createEmptyGrid(newRows, newCols)
+            : resizeGrid(prev, newRows, newCols);
+        postWorker({ type: "setGrid", grid: next });
         return next;
       });
-      postWorker({ type: "resize", rows: newRows, cols: newCols });
     },
     [postWorker],
   );
+
+  const toggleWrapEdges = useCallback(() => {
+    setWrapEdges((prev) => {
+      const next = !prev;
+      postWorker({ type: "setWrapEdges", wrap: next });
+      return next;
+    });
+  }, [postWorker]);
 
   const step = useCallback(() => {
     if (workerRef.current) {
       postWorker({ type: "step" });
     } else {
-      setBoard((prev) => stepSimulation(prev));
+      setGrid((prev) => stepSimulation(prev, undefined, undefined, currentRule, wrapEdges));
     }
-  }, [postWorker]);
+  }, [postWorker, currentRule, wrapEdges]);
 
   const toggleRunning = useCallback(() => {
     setRunning((prev) => {
       const next = !prev;
       postWorker({ type: next ? "start" : "stop" });
+      simulationEventBus.emit("runningChange", { running: next });
       return next;
     });
   }, [postWorker]);
@@ -173,28 +227,43 @@ export function useGameSimulation(initialRows: number, initialCols: number) {
 
   const clear = useCallback(() => {
     setRunning(false);
-    postWorker({ type: "clear" });
-    setBoard((prev) => createEmptyBoard(prev.rows, prev.cols));
+    postWorker({ type: "stop" });
+    setGrid((prev) => {
+      const empty = createEmptyGrid(prev.rows, prev.cols);
+      postWorker({ type: "setGrid", grid: empty });
+      return empty;
+    });
   }, [postWorker]);
 
   const randomize = useCallback(() => {
-    postWorker({ type: "randomize", density: 0.2 });
-    if (!workerRef.current) {
-      setBoard((prev) => createRandomBoard(prev.rows, prev.cols, 0.2));
-    }
+    setGrid((prev) => {
+      const next = createRandomGrid(prev.rows, prev.cols, 0.2);
+      postWorker({ type: "setGrid", grid: next });
+      return next;
+    });
   }, [postWorker]);
 
   const handleSetSpeed = useCallback(
     (newSpeed: number) => {
       setSpeed(newSpeed);
       postWorker({ type: "setSpeed", speed: newSpeed });
+      simulationEventBus.emit("speedChange", { speed: newSpeed });
+    },
+    [postWorker],
+  );
+
+  const setRule = useCallback(
+    (newRuleId: string) => {
+      setRuleIdState(newRuleId);
+      postWorker({ type: "setRule", ruleId: newRuleId });
+      simulationEventBus.emit("ruleChange", { ruleId: newRuleId });
     },
     [postWorker],
   );
 
   const toggleCell = useCallback(
     (row: number, col: number, targetState: boolean) => {
-      setBoard((prev) => {
+      setGrid((prev) => {
         const idx = row * prev.cols + col;
         if (idx < 0 || idx >= prev.cells.length) return prev;
 
@@ -208,31 +277,54 @@ export function useGameSimulation(initialRows: number, initialCols: number) {
         nextAges[idx] = targetState ? 1 : 0;
         const nextAliveCount = prev.aliveCount + (targetState ? 1 : -1);
 
-        return {
+        const next: SimulationGridState = {
           ...prev,
           cells: nextCells,
           ages: nextAges,
           aliveCount: Math.max(0, nextAliveCount),
         };
+        postWorker({ type: "setGrid", grid: next });
+        return next;
       });
-      postWorker({ type: "toggleCell", row, col, targetState });
     },
     [postWorker],
   );
 
   const stamp = useCallback(
     (pattern: PresetPattern, row: number, col: number) => {
-      setBoard((prev) => stampPattern(prev, pattern, row, col));
-      postWorker({ type: "stamp", pattern, row, col });
+      setGrid((prev) => {
+        const next = stampPattern(prev, pattern, row, col);
+        postWorker({ type: "setGrid", grid: next });
+        return next;
+      });
+    },
+    [postWorker],
+  );
+
+  const loadPattern = useCallback(
+    (pattern: PresetPattern) => {
+      setRunning(false);
+      postWorker({ type: "stop" });
+      setGrid((prev) => {
+        const empty = createEmptyGrid(prev.rows, prev.cols);
+        const centerR = Math.floor(prev.rows / 2);
+        const centerC = Math.floor(prev.cols / 2);
+        const next = stampPattern(empty, pattern, centerR, centerC, true, false);
+        postWorker({ type: "setGrid", grid: next });
+        return next;
+      });
     },
     [postWorker],
   );
 
   return {
-    board,
+    grid,
     running,
     idleRunning,
     speed,
+    ruleId,
+    currentRule,
+    setRule,
     toggleRunning,
     toggleIdle,
     step,
@@ -241,6 +333,9 @@ export function useGameSimulation(initialRows: number, initialCols: number) {
     setSpeed: handleSetSpeed,
     toggleCell,
     stamp,
+    loadPattern,
     resize,
+    wrapEdges,
+    toggleWrapEdges,
   };
-}
+};

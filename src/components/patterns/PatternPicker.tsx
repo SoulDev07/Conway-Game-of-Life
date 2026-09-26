@@ -1,6 +1,5 @@
 "use client";
 
-import type React from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { PATTERN_PRESETS } from "@/constants";
 import { getPatternBounds } from "@/lib";
@@ -17,13 +16,38 @@ const CATEGORIES: Array<"All" | PatternCategory> = [
   "Methuselah",
 ];
 
-const PatternPreview: React.FC<{ pattern: PresetPattern; color: string }> = ({
-  pattern,
-  color,
-}) => {
+interface PatternPreviewProps {
+  pattern: PresetPattern;
+  color: string;
+}
+
+const PatternPreview = ({ pattern, color }: PatternPreviewProps) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas || typeof IntersectionObserver === "undefined") {
+      setIsVisible(true);
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) {
+          setIsVisible(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: "60px" },
+    );
+
+    observer.observe(canvas);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (!isVisible) return;
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
@@ -55,24 +79,19 @@ const PatternPreview: React.FC<{ pattern: PresetPattern; color: string }> = ({
       const y = startY + (r - minR) * cellSize;
       ctx.fillRect(x, y, Math.max(1, cellSize - 1), Math.max(1, cellSize - 1));
     }
-  }, [pattern, color]);
+  }, [pattern, color, isVisible]);
 
   return <canvas ref={canvasRef} width={48} height={48} className={styles.previewCanvas} />;
 };
 
-interface PatternPickerProps {
+export interface PatternPickerProps {
   isOpen: boolean;
   onClose: () => void;
   onSelectPattern: (pattern: PresetPattern) => void;
   theme: Theme;
 }
 
-export const PatternPicker: React.FC<PatternPickerProps> = ({
-  isOpen,
-  onClose,
-  onSelectPattern,
-  theme,
-}) => {
+export const PatternPicker = ({ isOpen, onClose, onSelectPattern, theme }: PatternPickerProps) => {
   const [activeTab, setActiveTab] = useState<"library" | "import">("library");
   const [selectedCategory, setSelectedCategory] = useState<"All" | PatternCategory>("All");
   const [searchQuery, setSearchQuery] = useState("");

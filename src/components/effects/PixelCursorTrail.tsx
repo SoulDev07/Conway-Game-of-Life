@@ -1,6 +1,5 @@
 "use client";
 
-import type React from "react";
 import { useEffect, useRef } from "react";
 import type { Theme } from "@/types";
 
@@ -14,12 +13,12 @@ interface PixelParticle {
   vy: number;
 }
 
-interface PixelCursorTrailProps {
+export interface PixelCursorTrailProps {
   theme: Theme;
   glowMode: boolean;
 }
 
-export const PixelCursorTrail: React.FC<PixelCursorTrailProps> = ({ theme, glowMode }) => {
+export const PixelCursorTrail = ({ theme, glowMode }: PixelCursorTrailProps) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const particlesRef = useRef<PixelParticle[]>([]);
   const lastPosRef = useRef<{ x: number; y: number } | null>(null);

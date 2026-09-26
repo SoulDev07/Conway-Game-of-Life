@@ -1,24 +1,28 @@
 import {
-  createRandomBoard,
+  CONWAY_RULE,
+  createRandomGrid,
+  getRuleStrategy,
   injectRandomEdgePattern,
-  resizeBoard,
+  resizeGrid,
   stampPattern,
   stepSimulation,
 } from "@/lib";
-import type { GameBoardState, WorkerInMessage } from "@/types";
+import type { SimulationGridState, WorkerInMessage } from "@/types";
 
+let currentRule = CONWAY_RULE;
 let rows = 16;
 let cols = 32;
 let generation = 0;
 let aliveCount = 0;
 
-let frontCells: Uint8Array = new Uint8Array(rows * cols);
-let frontAges: Uint16Array = new Uint16Array(rows * cols);
-let backCells: Uint8Array = new Uint8Array(rows * cols);
-let backAges: Uint16Array = new Uint16Array(rows * cols);
+let frontCells = new Uint8Array(rows * cols);
+let frontAges = new Uint16Array(rows * cols);
+let backCells = new Uint8Array(rows * cols);
+let backAges = new Uint16Array(rows * cols);
 
 let running = false;
 let idleRunning = false;
+let wrapEdges = true;
 let speed = 500;
 let timerId: ReturnType<typeof setTimeout> | null = null;
 let idleTimerId: ReturnType<typeof setTimeout> | null = null;
@@ -33,10 +37,10 @@ function setupBuffers(newRows: number, newCols: number) {
   backAges = new Uint16Array(size);
 }
 
-function postBoardUpdate() {
+function postGridUpdate() {
   self.postMessage({
     type: "tick",
-    board: {
+    grid: {
       cells: frontCells,
       ages: frontAges,
       rows,
@@ -59,6 +63,8 @@ function advanceStep() {
     },
     backCells,
     backAges,
+    currentRule,
+    wrapEdges,
   );
 
   generation = nextState.generation;
@@ -75,13 +81,13 @@ function advanceStep() {
 function runLoop() {
   if (!running) return;
   advanceStep();
-  postBoardUpdate();
+  postGridUpdate();
   timerId = setTimeout(runLoop, speed);
 }
 
 function runIdleLoop() {
   if (!idleRunning) return;
-  const state: GameBoardState = {
+  const state: SimulationGridState = {
     cells: frontCells,
     ages: frontAges,
     rows,
@@ -93,7 +99,7 @@ function runIdleLoop() {
   frontCells.set(next.cells);
   frontAges.set(next.ages);
   aliveCount = next.aliveCount;
-  postBoardUpdate();
+  postGridUpdate();
   idleTimerId = setTimeout(runIdleLoop, Math.max(1000, speed * 2));
 }
 
@@ -105,7 +111,6 @@ self.onmessage = (e: MessageEvent<WorkerInMessage>) => {
       speed = msg.speed;
       generation = 0;
       aliveCount = 0;
-      postBoardUpdate();
       break;
 
     case "start":
@@ -125,7 +130,7 @@ self.onmessage = (e: MessageEvent<WorkerInMessage>) => {
 
     case "step":
       advanceStep();
-      postBoardUpdate();
+      postGridUpdate();
       break;
 
     case "setSpeed":
@@ -161,15 +166,15 @@ self.onmessage = (e: MessageEvent<WorkerInMessage>) => {
       backAges.fill(0);
       generation = 0;
       aliveCount = 0;
-      postBoardUpdate();
+      postGridUpdate();
       break;
     }
 
     case "randomize": {
-      const state = createRandomBoard(rows, cols, msg.density, frontCells, frontAges);
+      const state = createRandomGrid(rows, cols, msg.density, frontCells, frontAges);
       generation = 0;
       aliveCount = state.aliveCount;
-      postBoardUpdate();
+      postGridUpdate();
       break;
     }
 
@@ -181,14 +186,14 @@ self.onmessage = (e: MessageEvent<WorkerInMessage>) => {
           frontCells[idx] = msg.targetState ? 1 : 0;
           frontAges[idx] = msg.targetState ? 1 : 0;
           aliveCount = Math.max(0, aliveCount + (msg.targetState ? 1 : -1));
-          postBoardUpdate();
+          postGridUpdate();
         }
       }
       break;
     }
 
     case "stamp": {
-      const state: GameBoardState = {
+      const state: SimulationGridState = {
         cells: frontCells,
         ages: frontAges,
         rows,
@@ -198,13 +203,47 @@ self.onmessage = (e: MessageEvent<WorkerInMessage>) => {
       };
       const stamped = stampPattern(state, msg.pattern, msg.row, msg.col, true, true);
       aliveCount = stamped.aliveCount;
-      postBoardUpdate();
+      postGridUpdate();
+      break;
+    }
+
+    case "loadPattern": {
+      frontCells.fill(0);
+      frontAges.fill(0);
+      backCells.fill(0);
+      backAges.fill(0);
+      generation = 0;
+      aliveCount = 0;
+      const centerR = Math.floor(rows / 2);
+      const centerC = Math.floor(cols / 2);
+      const state: SimulationGridState = {
+        cells: frontCells,
+        ages: frontAges,
+        rows,
+        cols,
+        generation,
+        aliveCount,
+      };
+      const stamped = stampPattern(state, msg.pattern, centerR, centerC, true, true);
+      aliveCount = stamped.aliveCount;
+      postGridUpdate();
+      break;
+    }
+
+    case "setGrid": {
+      if (rows !== msg.grid.rows || cols !== msg.grid.cols) {
+        setupBuffers(msg.grid.rows, msg.grid.cols);
+      }
+      frontCells.set(msg.grid.cells);
+      frontAges.set(msg.grid.ages);
+      generation = msg.grid.generation;
+      aliveCount = msg.grid.aliveCount;
       break;
     }
 
     case "resize":
       if (rows !== msg.rows || cols !== msg.cols) {
-        const oldState: GameBoardState = {
+        const oldState: SimulationGridState = {
           cells: new Uint8Array(frontCells),
           ages: new Uint16Array(frontAges),
           rows,
@@ -213,11 +252,18 @@ self.onmessage = (e: MessageEvent<WorkerInMessage>) => {
           aliveCount,
         };
         setupBuffers(msg.rows, msg.cols);
-        const resized = resizeBoard(oldState, msg.rows, msg.cols, frontCells, frontAges);
+        const resized = resizeGrid(oldState, msg.rows, msg.cols, frontCells, frontAges);
         generation = resized.generation;
         aliveCount = resized.aliveCount;
-        postBoardUpdate();
       }
+      break;
+
+    case "setRule":
+      currentRule = getRuleStrategy(msg.ruleId);
+      break;
+
+    case "setWrapEdges":
+      wrapEdges = msg.wrap;
       break;
   }
 };

@@ -96,6 +96,8 @@ const jsonLd = {
   },
 };
 
+import { NuqsAdapter } from "nuqs/adapters/next/app";
+
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" className={tiny5.variable}>
@@ -105,7 +107,9 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
       </head>
-      <body className={tiny5.className}>{children}</body>
+      <body className={tiny5.className}>
+        <NuqsAdapter>{children}</NuqsAdapter>
+      </body>
     </html>
   );
 }

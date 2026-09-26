@@ -1,7 +1,5 @@
-"use client";
-
 import type { Theme } from "@/types";
-import styles from "./Controls.module.css";
+import styles from "./SimulationControls.module.css";
 
 export interface DropdownOption<T extends string | number> {
   key: T;
@@ -9,7 +7,7 @@ export interface DropdownOption<T extends string | number> {
   dotColor?: string;
 }
 
-interface DropdownMenuProps<T extends string | number> {
+export interface DropdownMenuProps<T extends string | number> {
   id: string;
   label: string;
   value: T;
@@ -22,7 +20,7 @@ interface DropdownMenuProps<T extends string | number> {
   textColor?: string;
 }
 
-export function DropdownMenu<T extends string | number>({
+export const DropdownMenu = <T extends string | number>({
   id,
   label,
   value,
@@ -33,7 +31,7 @@ export function DropdownMenu<T extends string | number>({
   onSelect,
   theme,
   textColor,
-}: DropdownMenuProps<T>) {
+}: DropdownMenuProps<T>) => {
   return (
     <div className={styles.dropdownWrap}>
       <button
@@ -99,4 +97,4 @@ export function DropdownMenu<T extends string | number>({
       )}
     </div>
   );
-}
+};

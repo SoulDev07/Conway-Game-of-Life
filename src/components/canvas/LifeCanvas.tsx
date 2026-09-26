@@ -3,11 +3,17 @@
 import type React from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { computeCellMetrics, getPatternBounds } from "@/lib";
-import type { CellCoordinate, GameBoardState, PresetPattern, Theme } from "@/types";
+import type {
+  CellCoordinate,
+  GridSelection,
+  PresetPattern,
+  SimulationGridState,
+  Theme,
+} from "@/types";
 import styles from "./LifeCanvas.module.css";
 
-interface LifeCanvasProps {
-  board: GameBoardState;
+export interface LifeCanvasProps {
+  grid: SimulationGridState;
   theme: Theme;
   bgColor: string;
   glowMode: boolean;
@@ -16,10 +22,13 @@ interface LifeCanvasProps {
   onResize: (rows: number, cols: number) => void;
   isStamping: boolean;
   selectedPattern: PresetPattern | null;
+  isSelecting: boolean;
+  selection: GridSelection | null;
+  onSelectionChange: (selection: GridSelection | null) => void;
 }
 
-export const LifeCanvas: React.FC<LifeCanvasProps> = ({
-  board,
+export const LifeCanvas = ({
+  grid,
   theme,
   bgColor,
   glowMode,
@@ -28,15 +37,21 @@ export const LifeCanvas: React.FC<LifeCanvasProps> = ({
   onResize,
   isStamping,
   selectedPattern,
-}) => {
+  isSelecting,
+  selection,
+  onSelectionChange,
+}: LifeCanvasProps) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const dimensionsRef = useRef<{ width: number; height: number; dpr: number }>({
+  const dimensionsRef = useRef({
     width: 0,
     height: 0,
     dpr: 1,
   });
   const isMouseDownRef = useRef(false);
+  const isSelectingDragRef = useRef(false);
+  const hasDraggedRef = useRef(false);
+  const dragStartCellRef = useRef<{ row: number; col: number } | null>(null);
   const currentPaintModeRef = useRef(true);
   const [hoveredCell, setHoveredCell] = useState<{ row: number; col: number } | null>(null);
 
@@ -45,17 +60,20 @@ export const LifeCanvas: React.FC<LifeCanvasProps> = ({
 
   const getMetrics = useCallback(() => {
     const { width, height } = dimensionsRef.current;
-    return computeCellMetrics(width, height, board.cols, board.rows);
-  }, [board.cols, board.rows]);
+    return computeCellMetrics(width, height, grid.cols, grid.rows);
+  }, [grid.cols, grid.rows]);
 
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 
-    const updateDimensions = () => {
-      const rect = container.getBoundingClientRect();
-      const w = Math.floor(rect.width);
-      const h = Math.floor(rect.height);
+    const observer = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      if (!entry) return;
+
+      const { width, height } = entry.contentRect;
+      const w = Math.floor(width);
+      const h = Math.floor(height);
       if (w === 0 || h === 0) return;
 
       const dpr = window.devicePixelRatio || 1;
@@ -75,17 +93,12 @@ export const LifeCanvas: React.FC<LifeCanvasProps> = ({
       const rows = Math.max(6, Math.floor(h / cellSize));
 
       onResizeRef.current(rows, cols);
-    };
+    });
 
-    const observer = new ResizeObserver(updateDimensions);
     observer.observe(container);
-    window.addEventListener("resize", updateDimensions);
-    window.addEventListener("orientationchange", updateDimensions);
 
     return () => {
       observer.disconnect();
-      window.removeEventListener("resize", updateDimensions);
-      window.removeEventListener("orientationchange", updateDimensions);
     };
   }, []);
 
@@ -108,37 +121,9 @@ export const LifeCanvas: React.FC<LifeCanvasProps> = ({
 
     const radius = Math.min(6, cellSize * 0.15);
 
-    if (board.aliveCount > 0) {
-      const { cells, rows, cols } = board;
-
-      if (glowMode) {
-        ctx.save();
-        ctx.shadowColor = theme.cellColor;
-        ctx.shadowBlur = 30;
-        ctx.fillStyle = theme.cellColor;
-
-        for (let r = 0; r < rows; r++) {
-          const rOffset = r * cols;
-          for (let c = 0; c < cols; c++) {
-            if (cells[rOffset + c] === 1) {
-              const x = offsetX + c * cellSize;
-              const y = offsetY + r * cellSize;
-              ctx.beginPath();
-              if (ctx.roundRect) {
-                ctx.roundRect(x, y, cellSize, cellSize, radius);
-              } else {
-                ctx.rect(x, y, cellSize, cellSize);
-              }
-              ctx.fill();
-            }
-          }
-        }
-        ctx.restore();
-      }
-
-      ctx.save();
-      ctx.shadowBlur = 0;
-      ctx.fillStyle = theme.cellColor;
+    if (grid.aliveCount > 0) {
+      const { cells, rows, cols } = grid;
+      const cellsPath = new Path2D();
 
       for (let r = 0; r < rows; r++) {
         const rOffset = r * cols;
@@ -146,54 +131,65 @@ export const LifeCanvas: React.FC<LifeCanvasProps> = ({
           if (cells[rOffset + c] === 1) {
             const x = offsetX + c * cellSize;
             const y = offsetY + r * cellSize;
-
-            ctx.beginPath();
-            if (ctx.roundRect) {
-              ctx.roundRect(x, y, cellSize, cellSize, radius);
+            if (cellsPath.roundRect) {
+              cellsPath.roundRect(x, y, cellSize, cellSize, radius);
             } else {
-              ctx.rect(x, y, cellSize, cellSize);
+              cellsPath.rect(x, y, cellSize, cellSize);
             }
-            ctx.fill();
-
-            ctx.strokeStyle = bgColor;
-            ctx.lineWidth = 1.5;
-            ctx.stroke();
           }
         }
       }
+
+      if (glowMode) {
+        ctx.save();
+        ctx.shadowColor = theme.cellColor;
+        ctx.shadowBlur = 30;
+        ctx.fillStyle = theme.cellColor;
+        ctx.fill(cellsPath);
+        ctx.restore();
+      }
+
+      ctx.save();
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = theme.cellColor;
+      ctx.fill(cellsPath);
+
+      ctx.strokeStyle = bgColor;
+      ctx.lineWidth = 1.5;
+      ctx.stroke(cellsPath);
       ctx.restore();
     }
 
     if (
       hoveredCell &&
       hoveredCell.row >= 0 &&
-      hoveredCell.row < board.rows &&
+      hoveredCell.row < grid.rows &&
       hoveredCell.col >= 0 &&
-      hoveredCell.col < board.cols
+      hoveredCell.col < grid.cols
     ) {
       if (isStamping && selectedPattern) {
         const { centerOffsetR, centerOffsetC } = getPatternBounds(selectedPattern);
         const startR = hoveredCell.row - centerOffsetR;
         const startC = hoveredCell.col - centerOffsetC;
+        const stampPath = new Path2D();
+
+        for (const [dr, dc] of selectedPattern.grid as CellCoordinate[]) {
+          const r = (startR + dr + grid.rows * 100) % grid.rows;
+          const c = (startC + dc + grid.cols * 100) % grid.cols;
+          const x = offsetX + c * cellSize;
+          const y = offsetY + r * cellSize;
+
+          if (stampPath.roundRect) {
+            stampPath.roundRect(x, y, cellSize, cellSize, radius);
+          } else {
+            stampPath.rect(x, y, cellSize, cellSize);
+          }
+        }
 
         ctx.save();
         ctx.fillStyle = theme.accentColor;
         ctx.globalAlpha = 0.45;
-
-        for (const [dr, dc] of selectedPattern.grid as CellCoordinate[]) {
-          const r = (startR + dr + board.rows * 100) % board.rows;
-          const c = (startC + dc + board.cols * 100) % board.cols;
-          const x = offsetX + c * cellSize;
-          const y = offsetY + r * cellSize;
-
-          ctx.beginPath();
-          if (ctx.roundRect) {
-            ctx.roundRect(x, y, cellSize, cellSize, radius);
-          } else {
-            ctx.rect(x, y, cellSize, cellSize);
-          }
-          ctx.fill();
-        }
+        ctx.fill(stampPath);
         ctx.restore();
       } else {
         const x = offsetX + hoveredCell.col * cellSize;
@@ -208,8 +204,54 @@ export const LifeCanvas: React.FC<LifeCanvasProps> = ({
       }
     }
 
+    if (selection) {
+      const minR = Math.min(selection.startRow, selection.endRow);
+      const maxR = Math.max(selection.startRow, selection.endRow);
+      const minC = Math.min(selection.startCol, selection.endCol);
+      const maxC = Math.max(selection.startCol, selection.endCol);
+
+      const selX = offsetX + minC * cellSize;
+      const selY = offsetY + minR * cellSize;
+      const selW = (maxC - minC + 1) * cellSize;
+      const selH = (maxR - minR + 1) * cellSize;
+
+      ctx.save();
+      ctx.fillStyle = theme.accentColor;
+      ctx.globalAlpha = 0.2;
+      ctx.fillRect(selX, selY, selW, selH);
+
+      ctx.globalAlpha = 0.95;
+      ctx.strokeStyle = theme.accentColor;
+      ctx.lineWidth = 2;
+      ctx.setLineDash([4, 4]);
+      ctx.strokeRect(selX, selY, selW, selH);
+      ctx.setLineDash([]);
+
+      const corner = Math.min(6, Math.max(3, cellSize * 0.4));
+      ctx.fillStyle = theme.accentColor;
+      ctx.fillRect(selX - 1, selY - 1, corner, 2);
+      ctx.fillRect(selX - 1, selY - 1, 2, corner);
+      ctx.fillRect(selX + selW - corner + 1, selY - 1, corner, 2);
+      ctx.fillRect(selX + selW - 1, selY - 1, 2, corner);
+      ctx.fillRect(selX - 1, selY + selH - 1, corner, 2);
+      ctx.fillRect(selX - 1, selY + selH - corner + 1, 2, corner);
+      ctx.fillRect(selX + selW - corner + 1, selY + selH - 1, corner, 2);
+      ctx.fillRect(selX + selW - 1, selY + selH - corner + 1, 2, corner);
+      ctx.restore();
+    }
+
     ctx.restore();
-  }, [board, theme, bgColor, glowMode, hoveredCell, isStamping, selectedPattern, getMetrics]);
+  }, [
+    grid,
+    theme,
+    bgColor,
+    glowMode,
+    hoveredCell,
+    isStamping,
+    selectedPattern,
+    selection,
+    getMetrics,
+  ]);
 
   const getCellFromEvent = useCallback(
     (clientX: number, clientY: number) => {
@@ -225,12 +267,12 @@ export const LifeCanvas: React.FC<LifeCanvasProps> = ({
       const col = Math.floor(x / cellSize);
       const row = Math.floor(y / cellSize);
 
-      if (row >= 0 && row < board.rows && col >= 0 && col < board.cols) {
+      if (row >= 0 && row < grid.rows && col >= 0 && col < grid.cols) {
         return { row, col };
       }
       return null;
     },
-    [board.rows, board.cols, getMetrics],
+    [grid.rows, grid.cols, getMetrics],
   );
 
   const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
@@ -247,9 +289,20 @@ export const LifeCanvas: React.FC<LifeCanvasProps> = ({
       return;
     }
 
+    if (selection && !isSelecting && !e.shiftKey) {
+      onSelectionChange(null);
+    }
+
+    if (isSelecting || e.shiftKey) {
+      isSelectingDragRef.current = true;
+      hasDraggedRef.current = false;
+      dragStartCellRef.current = { row: cell.row, col: cell.col };
+      return;
+    }
+
     isMouseDownRef.current = true;
-    const idx = cell.row * board.cols + cell.col;
-    const currentState = board.cells[idx] === 1;
+    const idx = cell.row * grid.cols + cell.col;
+    const currentState = grid.cells[idx] === 1;
     const nextState = !currentState;
     currentPaintModeRef.current = nextState;
 
@@ -260,6 +313,19 @@ export const LifeCanvas: React.FC<LifeCanvasProps> = ({
     const cell = getCellFromEvent(e.clientX, e.clientY);
     setHoveredCell(cell);
 
+    if (isSelectingDragRef.current && dragStartCellRef.current && cell) {
+      if (cell.row !== dragStartCellRef.current.row || cell.col !== dragStartCellRef.current.col) {
+        hasDraggedRef.current = true;
+      }
+      onSelectionChange({
+        startRow: dragStartCellRef.current.row,
+        startCol: dragStartCellRef.current.col,
+        endRow: cell.row,
+        endCol: cell.col,
+      });
+      return;
+    }
+
     if (isMouseDownRef.current && cell && !isStamping) {
       onCellToggle(cell.row, cell.col, currentPaintModeRef.current);
     }
@@ -269,7 +335,29 @@ export const LifeCanvas: React.FC<LifeCanvasProps> = ({
     try {
       e.currentTarget.releasePointerCapture(e.pointerId);
     } catch {}
+
+    if (isSelectingDragRef.current) {
+      if (!hasDraggedRef.current) {
+        if (selection) {
+          onSelectionChange(null);
+        } else if (dragStartCellRef.current) {
+          const idx = dragStartCellRef.current.row * grid.cols + dragStartCellRef.current.col;
+          if (grid.cells[idx] === 1) {
+            onSelectionChange({
+              startRow: dragStartCellRef.current.row,
+              startCol: dragStartCellRef.current.col,
+              endRow: dragStartCellRef.current.row,
+              endCol: dragStartCellRef.current.col,
+            });
+          }
+        }
+      }
+    }
+
     isMouseDownRef.current = false;
+    isSelectingDragRef.current = false;
+    hasDraggedRef.current = false;
+    dragStartCellRef.current = null;
   };
 
   const handlePointerCancel = (e: React.PointerEvent<HTMLCanvasElement>) => {
@@ -277,11 +365,14 @@ export const LifeCanvas: React.FC<LifeCanvasProps> = ({
       e.currentTarget.releasePointerCapture(e.pointerId);
     } catch {}
     isMouseDownRef.current = false;
+    isSelectingDragRef.current = false;
+    hasDraggedRef.current = false;
+    dragStartCellRef.current = null;
     setHoveredCell(null);
   };
 
   const handlePointerLeave = () => {
-    if (!isMouseDownRef.current) {
+    if (!isMouseDownRef.current && !isSelectingDragRef.current) {
       setHoveredCell(null);
     }
   };
@@ -290,7 +381,7 @@ export const LifeCanvas: React.FC<LifeCanvasProps> = ({
     <div
       ref={containerRef}
       className={styles.container}
-      style={{ cursor: isStamping ? "crosshair" : "default" }}
+      style={{ cursor: isStamping || isSelecting ? "crosshair" : "default" }}
     >
       <canvas
         ref={canvasRef}

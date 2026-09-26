@@ -106,7 +106,19 @@
 }
 
 .dockWrapper {
+  position: relative;
   pointer-events: auto;
+}
+
+.bannerContainer {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 60;
+  pointer-events: auto;
+  width: max-content;
+  max-width: 95vw;
 }
 
 .hint {

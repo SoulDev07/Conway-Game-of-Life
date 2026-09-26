@@ -1,4 +1,4 @@
-import type { CellCoordinate } from "./game";
+import type { CellCoordinate } from "./simulation";
 
 export type PatternCategory = "Spaceship" | "Oscillator" | "Gun" | "Methuselah" | "Still Life";
 

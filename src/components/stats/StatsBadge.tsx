@@ -1,16 +1,13 @@
-"use client";
-
-import type React from "react";
 import type { Theme } from "@/types";
 import styles from "./StatsBadge.module.css";
 
-interface StatsBadgeProps {
+export interface StatsBadgeProps {
   generation: number;
   aliveCount: number;
   theme: Theme;
 }
 
-export const StatsBadge: React.FC<StatsBadgeProps> = ({ generation, aliveCount, theme }) => {
+export const StatsBadge = ({ generation, aliveCount, theme }: StatsBadgeProps) => {
   return (
     <div
       className={styles.container}

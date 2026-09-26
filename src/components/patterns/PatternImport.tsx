@@ -1,22 +1,17 @@
 "use client";
 
-import type React from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { parsePatternString, RLEParseError } from "@/lib";
 import type { PatternCategory, PresetPattern, Theme } from "@/types";
 import styles from "./PatternImport.module.css";
 
-interface PatternImportProps {
+export interface PatternImportProps {
   theme: Theme;
   onSelectPattern: (pattern: PresetPattern) => void;
   onClose: () => void;
 }
 
-export const PatternImport: React.FC<PatternImportProps> = ({
-  theme,
-  onSelectPattern,
-  onClose,
-}) => {
+export const PatternImport = ({ theme, onSelectPattern, onClose }: PatternImportProps) => {
   const [input, setInput] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [preview, setPreview] = useState<PresetPattern | null>(null);

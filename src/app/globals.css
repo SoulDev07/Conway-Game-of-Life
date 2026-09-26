@@ -40,3 +40,84 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.25);
 }
+
+/* Pixel / CRT Retro Sonner Toast Styling */
+:root [data-sonner-toaster] {
+  font-family: var(--font-pixel), monospace;
+  --width: max-content;
+  --border-radius: 4px;
+  --normal-bg: rgba(9, 14, 23, 0.96);
+  --normal-border: rgba(255, 255, 255, 0.15);
+  --normal-text: #f0fdfa;
+}
+
+html body [data-sonner-toaster] [data-sonner-toast] {
+  font-family: var(--font-pixel), monospace;
+  font-size: 0.92rem;
+  letter-spacing: 0.035em;
+  text-transform: none;
+  border-radius: 4px;
+  padding: 8px 16px;
+  line-height: 1.35;
+  min-height: 42px;
+  width: max-content;
+  max-width: min(540px, 92vw);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(9, 14, 23, 0.96);
+  backdrop-filter: blur(12px);
+  color: #f0fdfa;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.75);
+  transition: all 0.15s ease;
+}
+
+html body [data-sonner-toaster] [data-sonner-toast] [data-icon] {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  margin: 0;
+  padding: 0;
+}
+
+html body [data-sonner-toaster] [data-sonner-toast] [data-content] {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+html body [data-sonner-toaster] [data-sonner-toast] [data-title] {
+  font-family: var(--font-pixel), monospace;
+  font-size: 0.92rem;
+  letter-spacing: 0.035em;
+  color: #f0fdfa;
+  line-height: 1.35;
+  white-space: normal;
+  word-break: break-word;
+}
+
+html body [data-sonner-toaster] [data-sonner-toast][data-type="success"] {
+  border: 1px solid var(--toast-accent, #00ff88);
+  box-shadow:
+    0 8px 24px rgba(0, 0, 0, 0.75),
+    0 0 12px var(--toast-glow, rgba(0, 255, 136, 0.25));
+}
+
+html body [data-sonner-toaster] [data-sonner-toast][data-type="error"] {
+  border: 1px solid #ff2453;
+  box-shadow:
+    0 8px 24px rgba(0, 0, 0, 0.75),
+    0 0 12px rgba(255, 36, 83, 0.3);
+}
+
+html body [data-sonner-toaster] [data-sonner-toast][data-type="info"] {
+  border: 1px solid var(--toast-accent, #00ff88);
+  box-shadow:
+    0 8px 24px rgba(0, 0, 0, 0.75),
+    0 0 12px var(--toast-glow, rgba(0, 255, 136, 0.25));
+}

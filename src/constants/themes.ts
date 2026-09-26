@@ -27,7 +27,7 @@ export const BACKGROUND_OPTIONS: Record<BackgroundKey, BackgroundOption> = {
   },
 };
 
-export const BACKGROUND_KEYS = Object.keys(BACKGROUND_OPTIONS) as BackgroundKey[];
+export const BACKGROUND_KEYS: readonly BackgroundKey[] = ["classic", "void", "black", "slate"];
 export const DEFAULT_BACKGROUND_KEY: BackgroundKey = "classic";
 
 export const THEMES: Record<ThemeKey, Theme> = {

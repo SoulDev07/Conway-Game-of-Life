@@ -1,5 +1,7 @@
 import { parseRLE } from "@/lib/rle-parser";
-import type { PresetPattern } from "@/types";
+import type { CellCoordinate, PresetPattern } from "@/types";
+
+const patternCoordinateCache = new Map<string, CellCoordinate[]>();
 
 function p(
   name: string,
@@ -7,7 +9,20 @@ function p(
   description: string,
   rle: string,
 ): PresetPattern {
-  return { name, category, description, rle, grid: parseRLE(rle).grid };
+  return {
+    name,
+    category,
+    description,
+    rle,
+    get grid(): CellCoordinate[] {
+      let cached = patternCoordinateCache.get(rle);
+      if (!cached) {
+        cached = parseRLE(rle).grid;
+        patternCoordinateCache.set(rle, cached);
+      }
+      return cached;
+    },
+  };
 }
 
 export const PATTERN_PRESETS: PresetPattern[] = [
