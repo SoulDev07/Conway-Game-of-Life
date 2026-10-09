@@ -247,28 +247,48 @@
 @media (max-width: 600px) {
   .overlay {
     padding: 0.5rem;
+    padding-top: calc(var(--sat, 0px) + 0.5rem);
+    padding-bottom: calc(var(--sab, 0px) + 0.5rem);
   }
   .modal {
     padding: 1rem 0.75rem;
-    max-height: 92dvh;
+    max-height: 94dvh;
+    border-radius: 6px;
   }
   .title {
-    font-size: 1.15rem;
+    font-size: 1.1rem;
+  }
+  .searchInput {
+    font-size: 16px;
+    padding: 9px 12px;
+  }
+  .tabBtn {
+    padding: 7px 14px;
+    font-size: 0.84rem;
+  }
+  .categoryTabs {
+    padding-bottom: 6px;
+  }
+  .categoryTab {
+    padding: 6px 11px;
+    font-size: 0.8rem;
+    min-height: 32px;
   }
   .grid {
     grid-template-columns: 1fr;
     gap: 8px;
-    max-height: 55vh;
+    max-height: 52vh;
   }
   .card {
-    padding: 8px;
+    padding: 9px;
+    min-height: 54px;
   }
   .cardLeft {
-    width: 42px;
-    height: 42px;
+    width: 44px;
+    height: 44px;
   }
   .previewCanvas {
-    width: 42px;
-    height: 42px;
+    width: 44px;
+    height: 44px;
   }
 }

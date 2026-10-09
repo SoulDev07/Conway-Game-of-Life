@@ -87,12 +87,14 @@ export const PixelCursorTrail = ({ theme, glowMode }: PixelCursorTrailProps) => 
       }
     };
 
-    const handlePointerLeave = () => {
+    const handlePointerEnd = () => {
       lastPosRef.current = null;
     };
 
     window.addEventListener("pointermove", handlePointerMove);
-    window.addEventListener("pointerleave", handlePointerLeave);
+    window.addEventListener("pointerleave", handlePointerEnd);
+    window.addEventListener("pointerup", handlePointerEnd);
+    window.addEventListener("pointercancel", handlePointerEnd);
 
     const render = () => {
       ctx.clearRect(0, 0, width, height);
@@ -138,7 +140,9 @@ export const PixelCursorTrail = ({ theme, glowMode }: PixelCursorTrailProps) => 
     return () => {
       window.removeEventListener("resize", handleResize);
       window.removeEventListener("pointermove", handlePointerMove);
-      window.removeEventListener("pointerleave", handlePointerLeave);
+      window.removeEventListener("pointerleave", handlePointerEnd);
+      window.removeEventListener("pointerup", handlePointerEnd);
+      window.removeEventListener("pointercancel", handlePointerEnd);
       if (animFrameRef.current) {
         cancelAnimationFrame(animFrameRef.current);
         animFrameRef.current = null;

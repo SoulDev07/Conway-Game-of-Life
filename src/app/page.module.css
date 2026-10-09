@@ -8,13 +8,15 @@
   transition: background-color 0.2s ease;
   user-select: none;
   -webkit-user-select: none;
+  padding-left: var(--sal, 0px);
+  padding-right: var(--sar, 0px);
 }
 
 .topSection {
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 0.6rem 1rem 0.2rem;
+  padding: calc(var(--sat, 0px) + 0.5rem) 1rem 0.2rem;
   z-index: 40;
   pointer-events: none;
   flex-shrink: 0;
@@ -41,7 +43,7 @@
 
 .stampBanner {
   position: absolute;
-  top: 4.5rem;
+  top: calc(var(--sat, 0px) + 4.2rem);
   left: 50%;
   transform: translateX(-50%);
   z-index: 60;
@@ -56,6 +58,8 @@
   font-size: 0.9rem;
   pointer-events: auto;
   animation: fadeIn 0.15s ease-out;
+  width: max-content;
+  max-width: min(92vw, 420px);
 }
 
 @keyframes fadeIn {
@@ -71,6 +75,9 @@
 
 .stampText {
   letter-spacing: 0.04em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .stampHint {
@@ -88,6 +95,7 @@
   cursor: pointer;
   letter-spacing: 0.04em;
   transition: all 0.1s ease;
+  flex-shrink: 0;
 }
 
 .cancelStampBtn:hover {
@@ -99,7 +107,7 @@
   flex-direction: column;
   align-items: center;
   gap: 4px;
-  padding: 0.2rem 0.5rem 0.5rem;
+  padding: 0.2rem 0.5rem calc(var(--sab, 0px) + 0.4rem);
   z-index: 40;
   pointer-events: none;
   flex-shrink: 0;
@@ -133,26 +141,30 @@
 
 @media (max-width: 768px) {
   .topSection {
-    padding: 0.35rem 0.5rem 0.1rem;
+    padding: calc(var(--sat, 0px) + 0.35rem) 0.5rem 0.15rem;
   }
   .title {
-    font-size: clamp(1.15rem, 5.5vw, 1.6rem);
+    font-size: clamp(1.1rem, 5vw, 1.55rem);
   }
   .hint {
     display: none;
   }
   .stampBanner {
-    top: 3.2rem;
+    top: calc(var(--sat, 0px) + 3.4rem);
     font-size: 0.78rem;
-    padding: 4px 10px;
+    padding: 5px 10px;
     gap: 8px;
-    width: max-content;
-    max-width: 90vw;
+    width: min(94vw, 360px);
   }
   .stampHint {
     display: none;
   }
   .bottomSection {
-    padding-bottom: 0.35rem;
+    padding-bottom: calc(var(--sab, 0px) + 0.35rem);
+  }
+  .dockWrapper {
+    width: 100%;
+    display: flex;
+    justify-content: center;
   }
 }

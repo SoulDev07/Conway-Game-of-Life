@@ -202,11 +202,55 @@
   outline: none;
 }
 
-@media (max-width: 480px) {
+@media (max-width: 520px) {
+  .overlay {
+    padding: 0.5rem;
+    padding-top: calc(var(--sat, 0px) + 0.5rem);
+    padding-bottom: calc(var(--sab, 0px) + 0.5rem);
+  }
+  .modal {
+    max-height: 94dvh;
+  }
+  .header {
+    padding: 12px 14px 10px;
+  }
+  .title {
+    font-size: 0.95rem;
+  }
+  .content {
+    padding: 12px 14px;
+    gap: 12px;
+  }
+  .nameInput {
+    font-size: 16px;
+    padding: 8px 10px;
+  }
+  .codeArea {
+    font-size: 14px;
+    height: 90px;
+  }
   .buttonGrid {
     grid-template-columns: 1fr;
+    gap: 8px;
   }
   .actionBtnPrimary {
     grid-column: span 1;
+  }
+  .actionBtn {
+    min-height: 38px;
+    padding: 8px 12px;
+  }
+  .shareUrlRow {
+    flex-direction: column;
+    gap: 8px;
+  }
+  .shareUrlInput {
+    font-size: 14px;
+    padding: 8px 10px;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  .shareUrlRow .actionBtn {
+    width: 100%;
   }
 }

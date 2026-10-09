@@ -358,6 +358,10 @@ export const LifeCanvas = ({
     isSelectingDragRef.current = false;
     hasDraggedRef.current = false;
     dragStartCellRef.current = null;
+
+    if (e.pointerType === "touch") {
+      setHoveredCell(null);
+    }
   };
 
   const handlePointerCancel = (e: React.PointerEvent<HTMLCanvasElement>) => {
@@ -388,6 +392,7 @@ export const LifeCanvas = ({
         className={styles.canvas}
         aria-label="Interactive Game of Life grid. Click or drag to toggle cells, or stamp selected pattern."
         tabIndex={0}
+        onContextMenu={(e) => e.preventDefault()}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}

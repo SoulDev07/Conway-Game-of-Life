@@ -46,6 +46,8 @@ export interface SimulationControlsProps {
 interface ControlsContextValue extends SimulationControlsProps {
   openMenu: "theme" | "bg" | "speed" | null;
   setOpenMenu: React.Dispatch<React.SetStateAction<"theme" | "bg" | "speed" | null>>;
+  mobileMenuOpen: boolean;
+  setMobileMenuOpen: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 const ControlsContext = createContext<ControlsContextValue | null>(null);
@@ -57,6 +59,28 @@ function useControlsContext() {
   }
   return ctx;
 }
+
+const THEME_OPTIONS: DropdownOption<ThemeKey>[] = THEME_KEYS.map((key) => ({
+  key,
+  label: THEMES[key].name,
+  dotColor: THEMES[key].accentColor,
+}));
+
+const BG_OPTIONS: DropdownOption<BackgroundKey>[] = BACKGROUND_KEYS.map((key) => ({
+  key,
+  label: BACKGROUND_OPTIONS[key].name,
+  dotColor: BACKGROUND_OPTIONS[key].color,
+}));
+
+const SPEED_OPTIONS: DropdownOption<number>[] = SPEED_PRESETS.map((p) => ({
+  key: p.ms,
+  label: p.label,
+}));
+
+const getSpeedLabel = (ms: number) => {
+  const preset = SPEED_PRESETS.find((p) => p.ms === ms);
+  return preset ? preset.label : `${ms}ms`;
+};
 
 // ----------------------------------------------------
 // Subcomponents
@@ -75,6 +99,8 @@ export const PlaybackControls = () => {
     onToggleSelect,
     theme,
     setOpenMenu,
+    mobileMenuOpen,
+    setMobileMenuOpen,
   } = useControlsContext();
 
   return (
@@ -140,6 +166,7 @@ export const PlaybackControls = () => {
         className={`${styles.btn} ${isStamping ? styles.activeToggle : ""}`}
         onClick={() => {
           setOpenMenu(null);
+          setMobileMenuOpen(false);
           onOpenPresets();
         }}
         aria-haspopup="dialog"
@@ -154,9 +181,10 @@ export const PlaybackControls = () => {
         Patterns
       </button>
 
+      {/* Select button - desktop toolbar only */}
       <button
         type="button"
-        className={`${styles.btn} ${isSelecting ? styles.activeToggle : ""}`}
+        className={`${styles.btn} ${styles.desktopSelectBtn} ${isSelecting ? styles.activeToggle : ""}`}
         onClick={() => {
           setOpenMenu(null);
           onToggleSelect();
@@ -172,6 +200,25 @@ export const PlaybackControls = () => {
         title="Box Select tool (drag on grid to select region)"
       >
         {isSelecting ? "Select: ON" : "Select"}
+      </button>
+
+      {/* More / Settings button - mobile toolbar only */}
+      <button
+        type="button"
+        className={`${styles.btn} ${styles.mobileMoreBtn} ${mobileMenuOpen ? styles.activeToggle : ""}`}
+        onClick={() => {
+          setOpenMenu(null);
+          setMobileMenuOpen((prev) => !prev);
+        }}
+        aria-expanded={mobileMenuOpen}
+        aria-label="Open simulation tools and settings"
+        style={{
+          borderColor: mobileMenuOpen ? theme.accentColor : theme.borderSubtle,
+          color: mobileMenuOpen ? theme.accentColor : theme.textPrimary,
+          background: mobileMenuOpen ? "rgba(255, 255, 255, 0.12)" : "transparent",
+        }}
+      >
+        More
       </button>
     </div>
   );
@@ -196,39 +243,7 @@ export const MenuControls = () => {
     setOpenMenu,
   } = useControlsContext();
 
-  const themeOptions = useMemo<DropdownOption<ThemeKey>[]>(
-    () =>
-      THEME_KEYS.map((key) => ({
-        key,
-        label: THEMES[key].name,
-        dotColor: THEMES[key].accentColor,
-      })),
-    [],
-  );
-
-  const bgOptions = useMemo<DropdownOption<BackgroundKey>[]>(
-    () =>
-      BACKGROUND_KEYS.map((key) => ({
-        key,
-        label: BACKGROUND_OPTIONS[key].name,
-        dotColor: BACKGROUND_OPTIONS[key].color,
-      })),
-    [],
-  );
-
-  const speedOptions = useMemo<DropdownOption<number>[]>(
-    () =>
-      SPEED_PRESETS.map((p) => ({
-        key: p.ms,
-        label: p.label,
-      })),
-    [],
-  );
-
-  const currentSpeedLabel = useMemo(() => {
-    const currentPreset = SPEED_PRESETS.find((p) => p.ms === speed);
-    return currentPreset ? currentPreset.label : `${speed}ms`;
-  }, [speed]);
+  const currentSpeedLabel = useMemo(() => getSpeedLabel(speed), [speed]);
 
   return (
     <div className={styles.group}>
@@ -287,7 +302,7 @@ export const MenuControls = () => {
         id="theme-menu-listbox"
         label={theme.name}
         value={currentThemeKey}
-        options={themeOptions}
+        options={THEME_OPTIONS}
         isOpen={openMenu === "theme"}
         onToggle={() => setOpenMenu((prev) => (prev === "theme" ? null : "theme"))}
         onClose={() => setOpenMenu(null)}
@@ -300,7 +315,7 @@ export const MenuControls = () => {
         id="bg-menu-listbox"
         label={`BG: ${BACKGROUND_OPTIONS[currentBgKey].name}`}
         value={currentBgKey}
-        options={bgOptions}
+        options={BG_OPTIONS}
         isOpen={openMenu === "bg"}
         onToggle={() => setOpenMenu((prev) => (prev === "bg" ? null : "bg"))}
         onClose={() => setOpenMenu(null)}
@@ -312,7 +327,7 @@ export const MenuControls = () => {
         id="speed-menu-listbox"
         label={currentSpeedLabel}
         value={speed}
-        options={speedOptions}
+        options={SPEED_OPTIONS}
         isOpen={openMenu === "speed"}
         onToggle={() => setOpenMenu((prev) => (prev === "speed" ? null : "speed"))}
         onClose={() => setOpenMenu(null)}
@@ -350,14 +365,19 @@ export const StatsDisplay = () => {
 
 export const SimulationControls = (props: SimulationControlsProps) => {
   const [openMenu, setOpenMenu] = useState<"theme" | "bg" | "speed" | null>(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const handleGlobalKeyDown = useCallback(
     (e: KeyboardEvent) => {
-      if (e.key === "Escape" && openMenu !== null) {
-        setOpenMenu(null);
+      if (e.key === "Escape") {
+        if (openMenu !== null) {
+          setOpenMenu(null);
+        } else if (mobileMenuOpen) {
+          setMobileMenuOpen(false);
+        }
       }
     },
-    [openMenu],
+    [openMenu, mobileMenuOpen],
   );
 
   useEffect(() => {
@@ -370,9 +390,13 @@ export const SimulationControls = (props: SimulationControlsProps) => {
       ...props,
       openMenu,
       setOpenMenu,
+      mobileMenuOpen,
+      setMobileMenuOpen,
     }),
-    [props, openMenu],
+    [props, openMenu, mobileMenuOpen],
   );
+
+  const currentSpeedLabel = useMemo(() => getSpeedLabel(props.speed), [props.speed]);
 
   return (
     <ControlsContext.Provider value={contextValue}>
@@ -386,19 +410,181 @@ export const SimulationControls = (props: SimulationControlsProps) => {
         }}
       >
         <PlaybackControls />
-        <div
-          className={styles.divider}
-          style={{ background: props.theme.borderSubtle }}
-          aria-hidden="true"
-        />
-        <MenuControls />
-        <div
-          className={styles.divider}
-          style={{ background: props.theme.borderSubtle }}
-          aria-hidden="true"
-        />
+        <div className={styles.desktopControls}>
+          <div
+            className={styles.divider}
+            style={{ background: props.theme.borderSubtle }}
+            aria-hidden="true"
+          />
+          <MenuControls />
+          <div
+            className={styles.divider}
+            style={{ background: props.theme.borderSubtle }}
+            aria-hidden="true"
+          />
+        </div>
         <StatsDisplay />
       </div>
+
+      {/* Mobile Tray / Sheet for Settings and Secondary Tools */}
+      {mobileMenuOpen && (
+        <>
+          <div
+            className={styles.trayBackdrop}
+            onClick={() => {
+              setOpenMenu(null);
+              setMobileMenuOpen(false);
+            }}
+            aria-hidden="true"
+          />
+          <div
+            className={styles.mobileTray}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Simulation tools and settings"
+            style={{
+              background: props.theme.bgSecondary,
+              borderColor: props.theme.accentColor,
+            }}
+          >
+            <div className={styles.trayHeader}>
+              <span className={styles.trayTitle} style={{ color: props.theme.accentColor }}>
+                TOOLS &amp; SETTINGS
+              </span>
+              <button
+                type="button"
+                className={styles.trayCloseBtn}
+                onClick={() => {
+                  setOpenMenu(null);
+                  setMobileMenuOpen(false);
+                }}
+                style={{ color: props.theme.textMuted }}
+                aria-label="Close settings tray"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className={styles.traySection}>
+              <div className={styles.traySectionLabel} style={{ color: props.theme.textMuted }}>
+                TOOLS &amp; MODES
+              </div>
+              <div className={styles.trayGrid2Col}>
+                <button
+                  type="button"
+                  className={`${styles.btn} ${styles.trayBtn} ${props.isSelecting ? styles.activeToggle : ""}`}
+                  onClick={() => {
+                    props.onToggleSelect();
+                    setMobileMenuOpen(false);
+                  }}
+                  aria-pressed={props.isSelecting}
+                  style={{
+                    borderColor: props.isSelecting
+                      ? props.theme.accentColor
+                      : props.theme.borderSubtle,
+                    color: props.isSelecting ? props.theme.accentColor : props.theme.textPrimary,
+                    background: props.isSelecting ? "rgba(255, 255, 255, 0.12)" : "transparent",
+                  }}
+                >
+                  {props.isSelecting ? "Select: ON" : "Box Select"}
+                </button>
+
+                <button
+                  type="button"
+                  className={`${styles.btn} ${styles.trayBtn} ${props.wrapEdges ? styles.activeToggle : ""}`}
+                  onClick={props.onToggleWrapEdges}
+                  aria-pressed={props.wrapEdges}
+                  style={{
+                    borderColor: props.wrapEdges
+                      ? props.theme.accentColor
+                      : props.theme.borderSubtle,
+                    color: props.wrapEdges ? props.theme.accentColor : props.theme.textPrimary,
+                    background: props.wrapEdges ? "rgba(255, 255, 255, 0.12)" : "transparent",
+                  }}
+                >
+                  {props.wrapEdges ? "Wrap: ON" : "Wrap: OFF"}
+                </button>
+
+                <button
+                  type="button"
+                  className={`${styles.btn} ${styles.trayBtn} ${props.glowMode ? styles.activeToggle : ""}`}
+                  onClick={props.onToggleGlow}
+                  aria-pressed={props.glowMode}
+                  style={{
+                    borderColor: props.glowMode
+                      ? props.theme.accentColor
+                      : props.theme.borderSubtle,
+                    color: props.glowMode ? props.theme.accentColor : props.theme.textPrimary,
+                    background: props.glowMode ? "rgba(255, 255, 255, 0.12)" : "transparent",
+                  }}
+                >
+                  {props.glowMode ? "Glow: ON" : "Glow: OFF"}
+                </button>
+
+                <button
+                  type="button"
+                  className={`${styles.btn} ${styles.trayBtn} ${props.idleRunning ? styles.activeToggle : ""}`}
+                  onClick={props.onToggleIdle}
+                  aria-pressed={props.idleRunning}
+                  style={{
+                    borderColor: props.idleRunning
+                      ? props.theme.accentColor
+                      : props.theme.borderSubtle,
+                    color: props.idleRunning ? props.theme.accentColor : props.theme.textPrimary,
+                    background: props.idleRunning ? "rgba(255, 255, 255, 0.12)" : "transparent",
+                  }}
+                >
+                  {props.idleRunning ? "Idle: ON" : "Idle: OFF"}
+                </button>
+              </div>
+            </div>
+
+            <div className={styles.traySection}>
+              <div className={styles.traySectionLabel} style={{ color: props.theme.textMuted }}>
+                CUSTOMIZE
+              </div>
+              <div className={styles.trayDropdownCol}>
+                <DropdownMenu
+                  id="mobile-theme-menu"
+                  label={`Theme: ${props.theme.name}`}
+                  value={props.currentThemeKey}
+                  options={THEME_OPTIONS}
+                  isOpen={openMenu === "theme"}
+                  onToggle={() => setOpenMenu((prev) => (prev === "theme" ? null : "theme"))}
+                  onClose={() => setOpenMenu(null)}
+                  onSelect={props.onSelectTheme}
+                  theme={props.theme}
+                  textColor={props.theme.accentColor}
+                />
+
+                <DropdownMenu
+                  id="mobile-bg-menu"
+                  label={`BG: ${BACKGROUND_OPTIONS[props.currentBgKey].name}`}
+                  value={props.currentBgKey}
+                  options={BG_OPTIONS}
+                  isOpen={openMenu === "bg"}
+                  onToggle={() => setOpenMenu((prev) => (prev === "bg" ? null : "bg"))}
+                  onClose={() => setOpenMenu(null)}
+                  onSelect={props.onSelectBg}
+                  theme={props.theme}
+                />
+
+                <DropdownMenu
+                  id="mobile-speed-menu"
+                  label={`Speed: ${currentSpeedLabel}`}
+                  value={props.speed}
+                  options={SPEED_OPTIONS}
+                  isOpen={openMenu === "speed"}
+                  onToggle={() => setOpenMenu((prev) => (prev === "speed" ? null : "speed"))}
+                  onClose={() => setOpenMenu(null)}
+                  onSelect={props.onChangeSpeed}
+                  theme={props.theme}
+                />
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </ControlsContext.Provider>
   );
 };
