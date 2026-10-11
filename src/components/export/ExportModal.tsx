@@ -153,6 +153,7 @@ export const ExportModal = ({
   return (
     <div className={styles.overlay} onClick={onClose}>
       <div
+        id="export-pattern-dialog"
         className={styles.modal}
         role="dialog"
         aria-modal="true"

@@ -130,6 +130,7 @@ export const PatternPicker = ({ isOpen, onClose, onSelectPattern, theme }: Patte
   return (
     <div className={styles.overlay} onClick={onClose}>
       <div
+        id="pattern-picker-dialog"
         ref={modalRef}
         className={styles.modal}
         role="dialog"
@@ -176,9 +177,12 @@ export const PatternPicker = ({ isOpen, onClose, onSelectPattern, theme }: Patte
 
         <div className={styles.tabBar} role="tablist" aria-label="Pattern picker tabs">
           <button
+            id="pattern-picker-tab-library"
             type="button"
             role="tab"
             aria-selected={activeTab === "library"}
+            aria-controls="pattern-picker-panel-library"
+            tabIndex={activeTab === "library" ? 0 : -1}
             className={`${styles.tabBtn} ${activeTab === "library" ? styles.tabBtnActive : ""}`}
             onClick={() => setActiveTab("library")}
             style={{
@@ -190,9 +194,12 @@ export const PatternPicker = ({ isOpen, onClose, onSelectPattern, theme }: Patte
             Library
           </button>
           <button
+            id="pattern-picker-tab-import"
             type="button"
             role="tab"
             aria-selected={activeTab === "import"}
+            aria-controls="pattern-picker-panel-import"
+            tabIndex={activeTab === "import" ? 0 : -1}
             className={`${styles.tabBtn} ${activeTab === "import" ? styles.tabBtnActive : ""}`}
             onClick={() => setActiveTab("import")}
             style={{
@@ -206,7 +213,11 @@ export const PatternPicker = ({ isOpen, onClose, onSelectPattern, theme }: Patte
         </div>
 
         {activeTab === "library" && (
-          <>
+          <div
+            id="pattern-picker-panel-library"
+            role="tabpanel"
+            aria-labelledby="pattern-picker-tab-library"
+          >
             <div className={styles.filterSection}>
               <input
                 type="search"
@@ -261,6 +272,7 @@ export const PatternPicker = ({ isOpen, onClose, onSelectPattern, theme }: Patte
                     key={p.name}
                     role="option"
                     aria-selected={false}
+                    aria-label={`${p.name}, ${p.category} pattern`}
                     tabIndex={0}
                     className={styles.card}
                     onClick={() => {
@@ -304,11 +316,17 @@ export const PatternPicker = ({ isOpen, onClose, onSelectPattern, theme }: Patte
                 ))
               )}
             </div>
-          </>
+          </div>
         )}
 
         {activeTab === "import" && (
-          <PatternImport theme={theme} onSelectPattern={onSelectPattern} onClose={onClose} />
+          <div
+            id="pattern-picker-panel-import"
+            role="tabpanel"
+            aria-labelledby="pattern-picker-tab-import"
+          >
+            <PatternImport theme={theme} onSelectPattern={onSelectPattern} onClose={onClose} />
+          </div>
         )}
       </div>
     </div>

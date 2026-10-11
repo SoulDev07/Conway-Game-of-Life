@@ -43,6 +43,7 @@ export function InfoModal({ isOpen, onClose, theme }: InfoModalProps) {
 
   return (
     <div
+      id="info-modal-dialog"
       className={styles.overlay}
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
@@ -77,26 +78,42 @@ export function InfoModal({ isOpen, onClose, theme }: InfoModalProps) {
           </button>
         </header>
 
-        <div className={styles.tabs} role="tablist" style={{ borderColor: theme.borderSubtle }}>
-          {TABS.map((tab) => (
-            <button
-              key={tab.key}
-              type="button"
-              role="tab"
-              aria-selected={activeTab === tab.key}
-              className={`${styles.tabBtn} ${activeTab === tab.key ? styles.activeTabBtn : ""}`}
-              onClick={() => setActiveTab(tab.key)}
-              style={{
-                color: activeTab === tab.key ? theme.accentColor : theme.textPrimary,
-                borderColor: activeTab === tab.key ? theme.accentColor : "transparent",
-              }}
-            >
-              {tab.label}
-            </button>
-          ))}
+        <div
+          className={styles.tabs}
+          role="tablist"
+          aria-label="Guide navigation tabs"
+          style={{ borderColor: theme.borderSubtle }}
+        >
+          {TABS.map((tab) => {
+            const isSelected = activeTab === tab.key;
+            return (
+              <button
+                key={tab.key}
+                id={`info-tab-${tab.key}`}
+                type="button"
+                role="tab"
+                aria-selected={isSelected}
+                aria-controls={`info-tabpanel-${tab.key}`}
+                tabIndex={isSelected ? 0 : -1}
+                className={`${styles.tabBtn} ${isSelected ? styles.activeTabBtn : ""}`}
+                onClick={() => setActiveTab(tab.key)}
+                style={{
+                  color: isSelected ? theme.accentColor : theme.textPrimary,
+                  borderColor: isSelected ? theme.accentColor : "transparent",
+                }}
+              >
+                {tab.label}
+              </button>
+            );
+          })}
         </div>
 
-        <div className={styles.body}>
+        <div
+          id={`info-tabpanel-${activeTab}`}
+          role="tabpanel"
+          aria-labelledby={`info-tab-${activeTab}`}
+          className={styles.body}
+        >
           {activeTab === "rules" && <RulesTab theme={theme} />}
           {activeTab === "controls" && <ControlsTab theme={theme} />}
           {activeTab === "history" && <AboutTab theme={theme} />}

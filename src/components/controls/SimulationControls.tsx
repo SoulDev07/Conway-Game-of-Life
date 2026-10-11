@@ -170,6 +170,7 @@ export const PlaybackControls = () => {
           onOpenPresets();
         }}
         aria-haspopup="dialog"
+        aria-controls="pattern-picker-dialog"
         aria-pressed={isStamping}
         style={{
           borderColor: isStamping ? theme.accentColor : theme.borderSubtle,
@@ -204,12 +205,15 @@ export const PlaybackControls = () => {
       {/* More / Settings button - mobile toolbar only */}
       <button
         type="button"
+        id="mobile-more-controls-btn"
         className={`${styles.btn} ${styles.mobileMoreBtn} ${mobileMenuOpen ? styles.activeToggle : ""}`}
         onClick={() => {
           setOpenMenu(null);
           setMobileMenuOpen((prev) => !prev);
         }}
+        aria-haspopup="dialog"
         aria-expanded={mobileMenuOpen}
+        aria-controls="mobile-tools-tray-dialog"
         aria-label="Open simulation tools and settings"
         style={{
           borderColor: mobileMenuOpen ? theme.accentColor : theme.borderSubtle,
@@ -434,17 +438,22 @@ export const SimulationControls = (props: SimulationControlsProps) => {
             aria-hidden="true"
           />
           <div
+            id="mobile-tools-tray-dialog"
             className={styles.mobileTray}
             role="dialog"
             aria-modal="true"
-            aria-label="Simulation tools and settings"
+            aria-labelledby="mobile-tools-tray-title"
             style={{
               background: props.theme.bgSecondary,
               borderColor: props.theme.accentColor,
             }}
           >
             <div className={styles.trayHeader}>
-              <span className={styles.trayTitle} style={{ color: props.theme.accentColor }}>
+              <span
+                id="mobile-tools-tray-title"
+                className={styles.trayTitle}
+                style={{ color: props.theme.accentColor }}
+              >
                 TOOLS &amp; SETTINGS
               </span>
               <button

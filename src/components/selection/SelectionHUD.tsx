@@ -83,6 +83,8 @@ export const SelectionHUD = ({
           className={styles.btn}
           onClick={onOpenExportModal}
           disabled={cells.length === 0}
+          aria-haspopup="dialog"
+          aria-controls="export-pattern-dialog"
           style={{
             borderColor: theme.accentColor,
             color: theme.textPrimary,
