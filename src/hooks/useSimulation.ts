@@ -3,11 +3,9 @@ import {
   createEmptyGrid,
   createRandomGrid,
   getRuleStrategy,
-  injectRandomEdgePattern,
   resizeGrid,
   simulationEventBus,
   stampPattern,
-  stepSimulation,
 } from "@/lib";
 import type {
   PresetPattern,
@@ -52,7 +50,6 @@ export const useSimulation = (initialRows: number, initialCols: number): UseSimu
 
   const workerRef = useRef<Worker | null>(null);
   const pendingWorkerMessages = useRef<WorkerInMessage[]>([]);
-  const fallbackBackBuffer = useRef<{ cells: Uint8Array; ages: Uint16Array } | null>(null);
 
   useEffect(() => {
     if (typeof window === "undefined" || typeof Worker === "undefined") return;
@@ -96,75 +93,6 @@ export const useSimulation = (initialRows: number, initialCols: number): UseSimu
     }
   }, [initialRows, initialCols]);
 
-  useEffect(() => {
-    if (workerRef.current || !running) return;
-
-    let animId: number;
-    let lastTime = performance.now();
-    let accumulator = 0;
-
-    const loop = (currentTime: number) => {
-      const delta = currentTime - lastTime;
-      lastTime = currentTime;
-      accumulator += Math.min(delta, 1000);
-
-      if (accumulator >= speed) {
-        setGrid((prev) => {
-          let nextGrid = prev;
-          const size = prev.rows * prev.cols;
-          if (!fallbackBackBuffer.current || fallbackBackBuffer.current.cells.length !== size) {
-            fallbackBackBuffer.current = {
-              cells: new Uint8Array(size),
-              ages: new Uint16Array(size),
-            };
-          }
-
-          while (accumulator >= speed) {
-            const back = fallbackBackBuffer.current;
-            const stepped = stepSimulation(nextGrid, back.cells, back.ages, currentRule);
-            fallbackBackBuffer.current = {
-              cells: nextGrid.cells,
-              ages: nextGrid.ages,
-            };
-            nextGrid = stepped;
-            accumulator -= speed;
-          }
-          return nextGrid;
-        });
-      }
-
-      animId = requestAnimationFrame(loop);
-    };
-
-    animId = requestAnimationFrame(loop);
-    return () => cancelAnimationFrame(animId);
-  }, [running, speed, currentRule]);
-
-  useEffect(() => {
-    if (workerRef.current || !idleRunning) return;
-
-    let animId: number;
-    let lastTime = performance.now();
-    let accumulator = 0;
-    const idleInterval = Math.max(1000, speed * 2);
-
-    const loop = (currentTime: number) => {
-      const delta = currentTime - lastTime;
-      lastTime = currentTime;
-      accumulator += Math.min(delta, 2000);
-
-      if (accumulator >= idleInterval) {
-        setGrid((prev) => injectRandomEdgePattern(prev));
-        accumulator -= idleInterval;
-      }
-
-      animId = requestAnimationFrame(loop);
-    };
-
-    animId = requestAnimationFrame(loop);
-    return () => cancelAnimationFrame(animId);
-  }, [idleRunning, speed]);
-
   const postWorker = useCallback((msg: WorkerInMessage) => {
     if (workerRef.current) {
       workerRef.current.postMessage(msg);
@@ -197,12 +125,8 @@ export const useSimulation = (initialRows: number, initialCols: number): UseSimu
   }, [postWorker]);
 
   const step = useCallback(() => {
-    if (workerRef.current) {
-      postWorker({ type: "step" });
-    } else {
-      setGrid((prev) => stepSimulation(prev, undefined, undefined, currentRule, wrapEdges));
-    }
-  }, [postWorker, currentRule, wrapEdges]);
+    postWorker({ type: "step" });
+  }, [postWorker]);
 
   const toggleRunning = useCallback(() => {
     setRunning((prev) => {

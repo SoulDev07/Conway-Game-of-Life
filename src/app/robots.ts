@@ -4,10 +4,13 @@ export const dynamic = "force-static";
 
 export default function robots(): MetadataRoute.Robots {
   return {
-    rules: {
-      userAgent: "*",
-      allow: "/",
-    },
+    rules: [
+      {
+        userAgent: "*",
+        allow: "/",
+      },
+    ],
     sitemap: "https://conway-game-of-life.souldev.me/sitemap.xml",
+    host: "https://conway-game-of-life.souldev.me",
   };
 }

@@ -12,6 +12,7 @@ export default function manifest(): MetadataRoute.Manifest {
     display: "standalone",
     background_color: "#292929",
     theme_color: "#292929",
+    categories: ["games", "simulation", "education"],
     icons: [
       {
         src: "/favicon.ico",

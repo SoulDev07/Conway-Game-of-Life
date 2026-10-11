@@ -194,7 +194,6 @@ export const PlaybackControls = () => {
           borderColor: isSelecting ? theme.accentColor : theme.borderSubtle,
           color: isSelecting ? theme.accentColor : theme.textPrimary,
           background: isSelecting ? "rgba(255, 255, 255, 0.08)" : "transparent",
-          minWidth: "86px",
         }}
         aria-label="Toggle box select tool"
         title="Box Select tool (drag on grid to select region)"
@@ -256,7 +255,6 @@ export const MenuControls = () => {
           borderColor: idleRunning ? theme.accentColor : theme.borderSubtle,
           color: idleRunning ? theme.accentColor : theme.textPrimary,
           background: idleRunning ? "rgba(255, 255, 255, 0.08)" : "transparent",
-          minWidth: "76px",
         }}
         aria-label="Toggle idle pattern generation"
       >
@@ -272,7 +270,6 @@ export const MenuControls = () => {
           borderColor: glowMode ? theme.accentColor : theme.borderSubtle,
           color: glowMode ? theme.accentColor : theme.textPrimary,
           background: glowMode ? "rgba(255, 255, 255, 0.08)" : "transparent",
-          minWidth: "76px",
         }}
         aria-label="Toggle cell glow effect"
       >
@@ -288,7 +285,6 @@ export const MenuControls = () => {
           borderColor: wrapEdges ? theme.accentColor : theme.borderSubtle,
           color: wrapEdges ? theme.accentColor : theme.textPrimary,
           background: wrapEdges ? "rgba(255, 255, 255, 0.08)" : "transparent",
-          minWidth: "76px",
         }}
         aria-label="Toggle toroidal wrap border mode"
         title={

@@ -3,12 +3,13 @@
 <p align="center">
   <a href="https://nextjs.org/"><img src="https://img.shields.io/badge/Next.js_16-000000?style=flat&logo=nextdotjs&logoColor=white" alt="Next.js 16" /></a>
   <a href="https://react.dev/"><img src="https://img.shields.io/badge/React_19-20232A?style=flat&logo=react&logoColor=61DAFB" alt="React 19" /></a>
-  <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-3178C6?style=flat&logo=typescript&logoColor=white" alt="TypeScript" /></a>
-  <a href="https://tailwindcss.com/"><img src="https://img.shields.io/badge/Tailwind_CSS-06B6D4?style=flat&logo=tailwindcss&logoColor=white" alt="Tailwind CSS" /></a>
-  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg?style=flat" alt="License MIT" /></a>
+  <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript_7-3178C6?style=flat&logo=typescript&logoColor=white" alt="TypeScript 5" /></a>
+  <a href="https://tailwindcss.com/"><img src="https://img.shields.io/badge/Tailwind_CSS_4-06B6D4?style=flat&logo=tailwindcss&logoColor=white" alt="Tailwind CSS 4" /></a>
+  <a href="https://biomejs.dev/"><img src="https://img.shields.io/badge/Biome-60a5fa?style=flat&logo=biome&logoColor=white" alt="Biome" /></a>
+  <a href="https://pnpm.io/"><img src="https://img.shields.io/badge/pnpm_12-4a4a4a?style=flat&logo=pnpm&logoColor=f69220" alt="pnpm 12" /></a>
 </p>
 
-Implementation of the famous cellular automaton devised by mathematician John Conway in 1970.
+Implementation of the famous cellular automaton devised by mathematician [John Horton Conway](https://en.wikipedia.org/wiki/John_Horton_Conway) in 1970.
 
 <p align="center">
   <img src="assets/Conway-Game-of-Life-Demo.gif" alt="Conway's Game of Life Demo">

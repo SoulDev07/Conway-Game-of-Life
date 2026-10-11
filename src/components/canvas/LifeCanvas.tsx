@@ -1,6 +1,5 @@
 "use client";
 
-import type React from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { computeCellMetrics, getPatternBounds } from "@/lib";
 import type {

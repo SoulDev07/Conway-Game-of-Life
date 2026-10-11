@@ -10,6 +10,7 @@ export interface ShortcutHandlers {
   onToggleSelect: () => void;
   onOpenExport: () => void;
   onCancel: () => void;
+  onToggleInfo?: () => void;
   isRunning: boolean;
 }
 
@@ -23,8 +24,9 @@ export const useKeyboardShortcuts = ({
   onToggleSelect,
   onOpenExport,
   onCancel,
+  onToggleInfo,
   isRunning,
-}: ShortcutHandlers): void => {
+}: ShortcutHandlers) => {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (
@@ -35,23 +37,27 @@ export const useKeyboardShortcuts = ({
         return;
       }
 
+      const key = e.key.toLowerCase();
+
       if (e.code === "Space") {
         e.preventDefault();
         onTogglePlay();
-      } else if (e.key === "s" || e.key === "S") {
+      } else if (key === "s") {
         if (!isRunning) onStep();
-      } else if (e.key === "c" || e.key === "C") {
+      } else if (key === "c") {
         onClear();
-      } else if (e.key === "r" || e.key === "R") {
+      } else if (key === "r") {
         onRandom();
-      } else if (e.key === "g" || e.key === "G") {
+      } else if (key === "g") {
         onToggleGlow();
-      } else if (e.key === "p" || e.key === "P") {
+      } else if (key === "p") {
         onTogglePatterns();
-      } else if (e.key === "b" || e.key === "B") {
+      } else if (key === "b") {
         onToggleSelect();
-      } else if (e.key === "e" || e.key === "E") {
+      } else if (key === "e") {
         onOpenExport();
+      } else if (key === "?" || key === "h") {
+        onToggleInfo?.();
       } else if (e.key === "Escape") {
         onCancel();
       }
@@ -69,6 +75,7 @@ export const useKeyboardShortcuts = ({
     onToggleSelect,
     onOpenExport,
     onCancel,
+    onToggleInfo,
     isRunning,
   ]);
 };

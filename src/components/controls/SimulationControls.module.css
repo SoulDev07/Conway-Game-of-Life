@@ -321,14 +321,60 @@
    Responsive Breakpoints
    ---------------------------------------------------- */
 
-@media (max-width: 900px) and (min-width: 769px) {
+@media (max-width: 1280px) and (min-width: 1025px) {
   .dock {
-    padding: 6px 8px;
+    padding: 6px 10px;
+    gap: 6px;
+  }
+  .group {
+    gap: 5px;
+  }
+  .desktopControls {
     gap: 6px;
   }
   .btn {
+    padding: 5px 9px;
+    font-size: 0.86rem;
+  }
+  .primaryBtn {
+    min-width: 58px;
+  }
+}
+
+@media (max-width: 1024px) and (min-width: 769px) {
+  .dock {
     padding: 5px 8px;
-    font-size: 0.85rem;
+    gap: 4px;
+    max-width: 99vw;
+  }
+  .group {
+    gap: 4px;
+  }
+  .desktopControls {
+    gap: 4px;
+  }
+  .divider {
+    margin: 0 1px;
+  }
+  .btn {
+    padding: 5px 7px;
+    font-size: 0.8rem;
+    min-height: 30px;
+    letter-spacing: 0.02em;
+  }
+  .primaryBtn {
+    min-width: 52px;
+  }
+  .statsInline {
+    gap: 3px;
+    padding: 2px 4px;
+  }
+  .statLabel {
+    font-size: 0.74rem;
+  }
+  .statVal {
+    font-size: 0.82rem;
+    margin-right: 2px;
   }
 }
 
